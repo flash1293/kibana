@@ -29,7 +29,7 @@ import { Direction } from '@elastic/eui/src/services/sort/sort_direction';
 import { injectI18n } from '@kbn/i18n/react';
 
 import { VisTypesRegistryProvider } from '../../registry/vis_types';
-import { SavedObject } from '../saved_object';
+import { RawSavedObject } from '../raw_saved_object';
 
 interface SavedObjectFinderUIState {
   items: any[];
@@ -43,8 +43,8 @@ interface SavedObjectFinderUIState {
 
 interface SavedObjectFinderUIProps extends InjectedIntlProps {
   callToActionButton?: React.ReactNode;
-  onChoose?: (id: SavedObject<any>['id'], type: SavedObject<any>['type']) => void;
-  makeUrl?: (id: SavedObject<any>['id']) => void;
+  onChoose?: (id: RawSavedObject<any>['id'], type: RawSavedObject<any>['type']) => void;
+  makeUrl?: (id: RawSavedObject<any>['id']) => void;
   noItemsMessage?: React.ReactNode;
   savedObjectType: 'visualization' | 'search';
   visTypes?: VisTypesRegistryProvider;
@@ -263,7 +263,7 @@ class SavedObjectFinderUI extends React.Component<
           defaultMessage: 'Title',
         }),
         sortable: true,
-        render: (title: string, record: SavedObject<any>) => {
+        render: (title: string, record: RawSavedObject<any>) => {
           const { onChoose, makeUrl } = this.props;
 
           if (!onChoose && !makeUrl) {

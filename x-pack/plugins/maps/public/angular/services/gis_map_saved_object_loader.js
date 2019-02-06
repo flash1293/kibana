@@ -6,7 +6,7 @@
 
 import './saved_gis_map';
 import { uiModules } from 'ui/modules';
-import { SavedObjectLoader } from 'ui/courier/saved_object/saved_object_loader';
+import { SavedObjectLoader } from 'ui/saved_objects/saved_object_loader';
 import { SavedObjectRegistryProvider } from 'ui/saved_objects/saved_object_registry';
 import { SavedObjectsClientProvider } from 'ui/saved_objects';
 
