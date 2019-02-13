@@ -34,6 +34,8 @@ import {
 import { Direction } from '@elastic/eui/src/services/sort/sort_direction';
 import { injectI18n } from '@kbn/i18n/react';
 
+import { EuiIcon } from '@elastic/eui';
+import { SavedObjectMetaData } from 'ui/embeddable/embeddable_factory';
 import { SavedObjectAttributes } from '../../../../server/saved_objects';
 import { VisTypesRegistryProvider } from '../../registry/vis_types';
 import { SavedObject } from '../saved_object';
@@ -60,7 +62,7 @@ interface SavedObjectFinderUIProps extends InjectedIntlProps {
   ) => void;
   makeUrl?: (id: SavedObject<SavedObjectAttributes>['id']) => void;
   noItemsMessage?: React.ReactNode;
-  savedObjectType: 'visualization' | 'search';
+  savedObjectMetaData: SavedObjectMetaData[];
   visTypes?: VisTypesRegistryProvider;
   initialPageSize?: 5 | 10 | 15;
 }
@@ -83,7 +85,7 @@ class SavedObjectFinderUI extends React.Component<
 
   private debouncedFetch = _.debounce(async (filter: string) => {
     const resp = await chrome.getSavedObjectsClient().find({
-      type: this.props.savedObjectType,
+      type: this.props.savedObjectMetaData.map(savedObjectType => savedObjectType.type),
       fields: ['title', 'visState'],
       search: filter ? `${filter}*` : undefined,
       page: 1,
@@ -92,9 +94,9 @@ class SavedObjectFinderUI extends React.Component<
       defaultSearchOperator: 'AND',
     });
 
-    const { savedObjectType, visTypes } = this.props;
+    const { savedObjectMetaData, visTypes } = this.props;
     if (
-      savedObjectType === 'visualization' &&
+      savedObjectMetaData.findIndex(metaData => metaData.type === 'visualization') &&
       !chrome.getUiSettingsClient().get('visualize:enableLabs') &&
       visTypes
     ) {
@@ -280,6 +282,13 @@ class SavedObjectFinderUI extends React.Component<
             return <span>{title}</span>;
           }
 
+          const iconType = (
+            this.props.savedObjectMetaData.find(metaData => metaData.type === record.type) ||
+            ({
+              icon: 'document',
+            } as Partial<SavedObjectMetaData>)
+          ).icon;
+
           return (
             <EuiLink
               onClick={
@@ -292,6 +301,7 @@ class SavedObjectFinderUI extends React.Component<
               href={makeUrl ? makeUrl(record.id) : undefined}
               data-test-subj={`savedObjectTitle${title.split(' ').join('-')}`}
             >
+              <EuiIcon type={iconType} size="s" />
               {title}
             </EuiLink>
           );
