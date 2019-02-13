@@ -24,7 +24,10 @@ import { SearchEmbeddable } from './search_embeddable';
 
 export class SearchEmbeddableFactory extends EmbeddableFactory {
   constructor($compile, $rootScope, searchLoader) {
-    super({ name: 'search' });
+    super({
+      name: 'search',
+      savedObjectMetaData: { type: 'search', icon: 'search' }
+    });
     this.$compile = $compile;
     this.searchLoader = searchLoader;
     this.$rootScope = $rootScope;

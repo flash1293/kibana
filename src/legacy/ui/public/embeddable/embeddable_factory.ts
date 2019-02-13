@@ -17,24 +17,39 @@
  * under the License.
  */
 
+import { ICON_TYPES } from '@elastic/eui';
+
 import { Embeddable } from './embeddable';
 import { EmbeddableState } from './types';
 
 export type OnEmbeddableStateChanged = (embeddableStateChanges: EmbeddableState) => void;
+
+export interface SavedObjectMetaData {
+  type: string;
+  icon: ICON_TYPES[0];
+}
 
 /**
  * The EmbeddableFactory creates and initializes an embeddable instance
  */
 export abstract class EmbeddableFactory {
   public readonly name: string;
+  public readonly savedObjectMetaData?: SavedObjectMetaData;
 
   /**
    *
    * @param name - a unique identified for this factory, which will be used to map an embeddable spec to
    * a factory that can generate an instance of it.
    */
-  constructor({ name }: { name: string }) {
+  constructor({
+    name,
+    savedObjectMetaData,
+  }: {
+    name: string;
+    savedObjectMetaData?: SavedObjectMetaData;
+  }) {
     this.name = name;
+    this.savedObjectMetaData = savedObjectMetaData;
   }
 
   /**
