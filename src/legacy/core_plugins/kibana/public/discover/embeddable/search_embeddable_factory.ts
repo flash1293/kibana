@@ -33,7 +33,10 @@ export class SearchEmbeddableFactory extends EmbeddableFactory {
     private $rootScope: ng.IRootScopeService,
     private searchLoader: SavedSearchLoader
   ) {
-    super({ name: 'search' });
+    super({
+      name: 'search',
+      savedObjectMetaData: { type: 'search', icon: 'search' },
+    });
   }
 
   public getEditPath(panelId: string) {

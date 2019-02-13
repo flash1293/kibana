@@ -28,11 +28,17 @@ import {
   EuiFlexGroup,
   EuiFlexItem,
   EuiLink,
+  EuiListGroup,
+  // @ts-ignore
+  EuiListGroupItem,
+  EuiPagination,
   EuiTableCriteria,
 } from '@elastic/eui';
 import { Direction } from '@elastic/eui/src/services/sort/sort_direction';
 import { i18n } from '@kbn/i18n';
 
+import { EuiIcon } from '@elastic/eui';
+import { SavedObjectMetaData } from 'ui/embeddable/embeddable_factory';
 import { SavedObjectAttributes } from '../../../../server/saved_objects';
 import { VisTypesRegistryProvider } from '../../registry/vis_types';
 import { SimpleSavedObject } from '../simple_saved_object';
@@ -59,7 +65,7 @@ interface BaseSavedObjectFinder {
   ) => void;
   makeUrl?: (id: SimpleSavedObject<SavedObjectAttributes>['id']) => void;
   noItemsMessage?: React.ReactNode;
-  savedObjectType: 'visualization' | 'search' | 'index-pattern';
+  savedObjectMetaData: SavedObjectMetaData[];
   visTypes?: VisTypesRegistryProvider;
 }
 
@@ -80,8 +86,8 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
     onChoose: PropTypes.func,
     makeUrl: PropTypes.func,
     noItemsMessage: PropTypes.node,
-    savedObjectType: PropTypes.oneOf(['visualization', 'search', 'index-pattern']).isRequired,
     visTypes: PropTypes.object,
+    savedObjectMetaData: PropTypes.object.isRequired,
     initialPageSize: PropTypes.oneOf([5, 10, 15]),
     fixedPageSize: PropTypes.number,
   };
@@ -90,7 +96,7 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
 
   private debouncedFetch = _.debounce(async (filter: string) => {
     const resp = await chrome.getSavedObjectsClient().find({
-      type: this.props.savedObjectType,
+      type: this.props.savedObjectMetaData.map(savedObjectType => savedObjectType.type),
       fields: ['title', 'visState'],
       search: filter ? `${filter}*` : undefined,
       page: 1,
@@ -99,9 +105,9 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
       defaultSearchOperator: 'AND',
     });
 
-    const { savedObjectType, visTypes } = this.props;
+    const { savedObjectMetaData, visTypes } = this.props;
     if (
-      savedObjectType === 'visualization' &&
+      savedObjectMetaData.findIndex(metaData => metaData.type === 'visualization') &&
       !chrome.getUiSettingsClient().get('visualize:enableLabs') &&
       visTypes
     ) {
@@ -257,64 +263,46 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
   }
 
   private renderTable() {
-    const pagination = {
-      pageIndex: this.state.page,
-      pageSize: this.state.perPage,
-      totalItemCount: this.state.items.length,
-      hidePerPageOptions: Boolean(this.props.fixedPageSize),
-      pageSizeOptions: [5, 10, 15],
-    };
-    // TODO there should be a Type in EUI for that, replace if it exists
-    const sorting: { sort?: EuiTableCriteria['sort'] } = {};
-    if (this.state.sortField) {
-      sorting.sort = {
-        field: this.state.sortField,
-        direction: this.state.sortDirection,
-      };
-    }
-    const tableColumns = [
-      {
-        field: 'title',
-        name: i18n.translate('common.ui.savedObjects.finder.titleLabel', {
-          defaultMessage: 'Title',
-        }),
-        sortable: true,
-        render: (title: string, record: SimpleSavedObject<SavedObjectAttributes>) => {
-          const { onChoose, makeUrl } = this.props;
-
-          if (!onChoose && !makeUrl) {
-            return <span>{title}</span>;
-          }
-
-          return (
-            <EuiLink
-              onClick={
-                onChoose
-                  ? () => {
-                      onChoose(record.id, record.type);
-                    }
-                  : undefined
-              }
-              href={makeUrl ? makeUrl(record.id) : undefined}
-              data-test-subj={`savedObjectTitle${title.split(' ').join('-')}`}
-            >
-              {title}
-            </EuiLink>
-          );
-        },
-      },
-    ];
     const items = this.state.items.length === 0 ? [] : this.getPageOfItems();
+    const { onChoose, savedObjectMetaData } = this.props;
+
     return (
-      <EuiBasicTable
-        items={items}
-        loading={this.state.isFetchingItems}
-        columns={tableColumns}
-        pagination={pagination}
-        sorting={sorting}
-        onChange={this.onTableChange}
-        noItemsMessage={this.props.noItemsMessage}
-      />
+      <>
+        <EuiListGroup>
+          {items.map(item => {
+            const iconType = (
+              savedObjectMetaData.find(metaData => metaData.type === item.type) ||
+              ({
+                icon: 'document',
+              } as Partial<SavedObjectMetaData>)
+            ).icon;
+            return (
+              <EuiListGroupItem
+                key={item.id}
+                iconType={iconType}
+                label={item.title}
+                onClick={
+                  onChoose
+                    ? () => {
+                        onChoose(item.id, item.type);
+                      }
+                    : undefined
+                }
+                data-test-subj={`savedObjectTitle${(item.title || '').split(' ').join('-')}`}
+              />
+            );
+          })}
+        </EuiListGroup>
+        <EuiPagination
+          activePage={this.state.page}
+          pageCount={Math.ceil(this.state.items.length / this.state.perPage)}
+          onPageClick={page => {
+            this.setState({
+              page,
+            });
+          }}
+        />
+      </>
     );
   }
 }

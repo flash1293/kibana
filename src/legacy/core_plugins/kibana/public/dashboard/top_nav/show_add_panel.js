@@ -24,7 +24,7 @@ import ReactDOM from 'react-dom';
 
 let isOpen = false;
 
-export function showAddPanel(addNewPanel, addNewVis, visTypes) {
+export function showAddPanel(addNewPanel, addNewVis, visTypes, embeddableFactories) {
   if (isOpen) {
     return;
   }
@@ -50,6 +50,7 @@ export function showAddPanel(addNewPanel, addNewVis, visTypes) {
         visTypes={visTypes}
         addNewPanel={addNewPanel}
         addNewVis={addNewVisWithCleanup}
+        embeddableFactories={embeddableFactories}
       />
     </I18nContext>
   );

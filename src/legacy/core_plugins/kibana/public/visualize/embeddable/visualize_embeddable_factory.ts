@@ -35,7 +35,10 @@ export class VisualizeEmbeddableFactory extends EmbeddableFactory {
   private config: Legacy.KibanaConfig;
 
   constructor(savedVisualizations: SavedVisualizations, config: Legacy.KibanaConfig) {
-    super({ name: 'visualization' });
+    super({
+      name: 'visualization',
+      savedObjectMetaData: { type: 'visualization', icon: 'visualizeApp' },
+    });
     this.config = config;
     this.savedVisualizations = savedVisualizations;
   }
