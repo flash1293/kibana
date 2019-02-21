@@ -23,31 +23,33 @@ import React from 'react';
 import chrome from 'ui/chrome';
 
 import {
-  EuiBasicTable,
   EuiFieldSearch,
   EuiFlexGroup,
   EuiFlexItem,
-  EuiLink,
   EuiListGroup,
   // @ts-ignore
   EuiListGroupItem,
   EuiPagination,
-  EuiTableCriteria,
 } from '@elastic/eui';
 import { Direction } from '@elastic/eui/src/services/sort/sort_direction';
 import { i18n } from '@kbn/i18n';
 
-import { EuiIcon } from '@elastic/eui';
-import { SavedObjectMetaData } from 'ui/embeddable/embeddable_factory';
 import { SavedObjectAttributes } from '../../../../server/saved_objects';
-import { VisTypesRegistryProvider } from '../../registry/vis_types';
 import { SimpleSavedObject } from '../simple_saved_object';
+
+export interface SavedObjectMetaData<T extends SavedObjectAttributes> {
+  type: string;
+  name: string;
+  getIconForSavedObject(savedObject: SimpleSavedObject<T>): string | undefined;
+  showSavedObject(savedObject: SimpleSavedObject<T>): boolean;
+}
 
 interface SavedObjectFinderUIState {
   items: Array<{
     title: string | null;
     id: SimpleSavedObject<SavedObjectAttributes>['id'];
     type: SimpleSavedObject<SavedObjectAttributes>['type'];
+    savedObject: SimpleSavedObject<SavedObjectAttributes>;
   }>;
   filter: string;
   isFetchingItems: boolean;
@@ -65,8 +67,7 @@ interface BaseSavedObjectFinder {
   ) => void;
   makeUrl?: (id: SimpleSavedObject<SavedObjectAttributes>['id']) => void;
   noItemsMessage?: React.ReactNode;
-  savedObjectMetaData: SavedObjectMetaData[];
-  visTypes?: VisTypesRegistryProvider;
+  savedObjectMetaData: Array<SavedObjectMetaData<SavedObjectAttributes>>;
 }
 
 interface SavedObjectFinderFixedPage extends BaseSavedObjectFinder {
@@ -86,8 +87,7 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
     onChoose: PropTypes.func,
     makeUrl: PropTypes.func,
     noItemsMessage: PropTypes.node,
-    visTypes: PropTypes.object,
-    savedObjectMetaData: PropTypes.object.isRequired,
+    savedObjectMetaData: PropTypes.array.isRequired,
     initialPageSize: PropTypes.oneOf([5, 10, 15]),
     fixedPageSize: PropTypes.number,
   };
@@ -95,8 +95,10 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
   private isComponentMounted: boolean = false;
 
   private debouncedFetch = _.debounce(async (filter: string) => {
+    const metaDataMap = this.getSavedObjectMetaDataMap();
+
     const resp = await chrome.getSavedObjectsClient().find({
-      type: this.props.savedObjectMetaData.map(savedObjectType => savedObjectType.type),
+      type: Object.keys(metaDataMap),
       fields: ['title', 'visState'],
       search: filter ? `${filter}*` : undefined,
       page: 1,
@@ -105,21 +107,10 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
       defaultSearchOperator: 'AND',
     });
 
-    const { savedObjectMetaData, visTypes } = this.props;
-    if (
-      savedObjectMetaData.findIndex(metaData => metaData.type === 'visualization') &&
-      !chrome.getUiSettingsClient().get('visualize:enableLabs') &&
-      visTypes
-    ) {
-      resp.savedObjects = resp.savedObjects.filter(savedObject => {
-        if (typeof savedObject.attributes.visState !== 'string') {
-          return false;
-        }
-        const typeName: string = JSON.parse(savedObject.attributes.visState).type;
-        const visType = visTypes.byName[typeName];
-        return visType.stage !== 'experimental';
-      });
-    }
+    resp.savedObjects = resp.savedObjects.filter(
+      savedObject =>
+        metaDataMap[savedObject.type] && metaDataMap[savedObject.type].showSavedObject(savedObject)
+    );
 
     if (!this.isComponentMounted) {
       return;
@@ -130,11 +121,17 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
     if (filter === this.state.filter) {
       this.setState({
         isFetchingItems: false,
-        items: resp.savedObjects.map(({ attributes: { title }, id, type }) => {
+        items: resp.savedObjects.map(savedObject => {
+          const {
+            attributes: { title },
+            id,
+            type,
+          } = savedObject;
           return {
             title: typeof title === 'string' ? title : '',
             id,
             type,
+            savedObject,
           };
         }),
       });
@@ -172,28 +169,12 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
     );
   }
 
-  private onTableChange = ({ page, sort = {} }: EuiTableCriteria) => {
-    let sortField: string | undefined = sort.field;
-    let sortDirection: Direction | undefined = sort.direction;
-
-    // 3rd sorting state that is not captured by sort - native order (no sort)
-    // when switching from desc to asc for the same field - use native order
-    if (
-      this.state.sortField === sortField &&
-      this.state.sortDirection === 'desc' &&
-      sortDirection === 'asc'
-    ) {
-      sortField = undefined;
-      sortDirection = undefined;
-    }
-
-    this.setState({
-      page: page.index,
-      perPage: page.size,
-      sortField,
-      sortDirection,
-    });
-  };
+  private getSavedObjectMetaDataMap(): Record<string, SavedObjectMetaData<SavedObjectAttributes>> {
+    return this.props.savedObjectMetaData.reduce(
+      (map, metaData) => ({ ...map, [metaData.type]: metaData }),
+      {}
+    );
+  }
 
   // server-side paging not supported
   // 1) saved object client does not support sorting by title because title is only mapped as analyzed
@@ -273,9 +254,9 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
             const iconType = (
               savedObjectMetaData.find(metaData => metaData.type === item.type) ||
               ({
-                icon: 'document',
-              } as Partial<SavedObjectMetaData>)
-            ).icon;
+                getIconForSavedObject: () => 'document',
+              } as Pick<SavedObjectMetaData<SavedObjectAttributes>, 'getIconForSavedObject'>)
+            ).getIconForSavedObject(item.savedObject);
             return (
               <EuiListGroupItem
                 key={item.id}

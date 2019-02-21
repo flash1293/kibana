@@ -17,8 +17,8 @@
  * under the License.
  */
 
-import { ICON_TYPES } from '@elastic/eui';
-
+import { SavedObjectAttributes } from '../../../server/saved_objects';
+import { SavedObjectMetaData } from '../saved_objects/components/saved_object_finder';
 import { Embeddable } from './embeddable';
 import { EmbeddableState } from './types';
 export interface EmbeddableInstanceConfiguration {
@@ -27,17 +27,12 @@ export interface EmbeddableInstanceConfiguration {
 
 export type OnEmbeddableStateChanged = (embeddableStateChanges: EmbeddableState) => void;
 
-export interface SavedObjectMetaData {
-  type: string;
-  icon: ICON_TYPES[0];
-}
-
 /**
  * The EmbeddableFactory creates and initializes an embeddable instance
  */
-export abstract class EmbeddableFactory {
+export abstract class EmbeddableFactory<T extends SavedObjectAttributes = SavedObjectAttributes> {
   public readonly name: string;
-  public readonly savedObjectMetaData?: SavedObjectMetaData;
+  public readonly savedObjectMetaData?: SavedObjectMetaData<T>;
 
   /**
    *
@@ -49,7 +44,7 @@ export abstract class EmbeddableFactory {
     savedObjectMetaData,
   }: {
     name: string;
-    savedObjectMetaData?: SavedObjectMetaData;
+    savedObjectMetaData?: SavedObjectMetaData<T>;
   }) {
     this.name = name;
     this.savedObjectMetaData = savedObjectMetaData;

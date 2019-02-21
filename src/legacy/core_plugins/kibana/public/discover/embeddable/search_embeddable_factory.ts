@@ -35,7 +35,12 @@ export class SearchEmbeddableFactory extends EmbeddableFactory {
   ) {
     super({
       name: 'search',
-      savedObjectMetaData: { type: 'search', icon: 'search' },
+      savedObjectMetaData: {
+        name: 'Search',
+        type: 'search',
+        getIconForSavedObject: () => 'search',
+        showSavedObject: () => true,
+      },
     });
   }
 
