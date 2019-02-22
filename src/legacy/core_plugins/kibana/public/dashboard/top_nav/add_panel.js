@@ -140,15 +140,9 @@ class DashboardAddPanelUi extends React.Component {
             </h1>
           </EuiTitle>
 
-          {/* <EuiTabs>
-            {this.renderTabs()}
-          </EuiTabs> */}
+          {addNewVisBtn}
           <SavedObjectFinder
-            // TODO special case for vis, generalize later
-            callToActionButton={addNewVisBtn}
             onChoose={this.onAddPanel}
-            // TODO special case for vis, generalize later
-            visTypes={this.props.visTypes}
             noItemsMessage={this.props.intl.formatMessage({
               // TODO find a way to do this dynamically (embeddableFactory.savedObjectsMetaInformation maybe?)
               id: 'kbn.dashboard.topNav.addPanel.savedObjectFinder.noMatchingObjectsMessage',
@@ -157,6 +151,7 @@ class DashboardAddPanelUi extends React.Component {
             savedObjectMetaData={this.props.embeddableFactories
               .filter(embeddableFactory => Boolean(embeddableFactory.savedObjectMetaData))
               .map(({ savedObjectMetaData }) => savedObjectMetaData)}
+            showFilter={true}
           />
 
           <EuiSpacer size="s" />

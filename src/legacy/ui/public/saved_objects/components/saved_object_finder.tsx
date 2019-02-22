@@ -23,13 +23,22 @@ import React from 'react';
 import chrome from 'ui/chrome';
 
 import {
+  EuiButton,
+  EuiCheckboxGroup,
   EuiFieldSearch,
   EuiFlexGroup,
   EuiFlexItem,
+  EuiFormRow,
+  // @ts-ignore
   EuiListGroup,
   // @ts-ignore
   EuiListGroupItem,
   EuiPagination,
+  EuiPopover,
+  EuiRadioGroup,
+  EuiSpacer,
+  EuiTablePagination,
+  EuiTitle,
 } from '@elastic/eui';
 import { Direction } from '@elastic/eui/src/services/sort/sort_direction';
 import { i18n } from '@kbn/i18n';
@@ -57,6 +66,8 @@ interface SavedObjectFinderUIState {
   perPage: number;
   sortField?: string;
   sortDirection?: Direction;
+  filterOpen: boolean;
+  filteredTypes: string[];
 }
 
 interface BaseSavedObjectFinder {
@@ -68,6 +79,7 @@ interface BaseSavedObjectFinder {
   makeUrl?: (id: SimpleSavedObject<SavedObjectAttributes>['id']) => void;
   noItemsMessage?: React.ReactNode;
   savedObjectMetaData: Array<SavedObjectMetaData<SavedObjectAttributes>>;
+  showFilter?: boolean;
 }
 
 interface SavedObjectFinderFixedPage extends BaseSavedObjectFinder {
@@ -147,6 +159,8 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
       page: 0,
       perPage: props.initialPageSize || props.fixedPageSize || 15,
       filter: '',
+      filterOpen: false,
+      filteredTypes: [],
     };
   }
 
@@ -176,6 +190,17 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
     );
   }
 
+  private getPageCount() {
+    return Math.ceil(
+      (this.state.filteredTypes.length === 0
+        ? this.state.items.length
+        : this.state.items.filter(
+            item =>
+              this.state.filteredTypes.length === 0 || this.state.filteredTypes.includes(item.type)
+          ).length) / this.state.perPage
+    );
+  }
+
   // server-side paging not supported
   // 1) saved object client does not support sorting by title because title is only mapped as analyzed
   // 2) can not search on anything other than title because all other fields are stored in opaque JSON strings,
@@ -184,14 +209,14 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
   private getPageOfItems = () => {
     // do not sort original list to preserve elasticsearch ranking order
     const items = this.state.items.slice();
-    const { sortField } = this.state;
+    const { sortDirection } = this.state;
 
-    if (sortField) {
+    if (sortDirection) {
       items.sort((a, b) => {
-        const fieldA = _.get(a, sortField, '');
-        const fieldB = _.get(b, sortField, '');
+        const fieldA = _.get(a, 'title', '');
+        const fieldB = _.get(b, 'title', '');
         let order = 1;
-        if (this.state.sortDirection === 'desc') {
+        if (sortDirection === 'desc') {
           order = -1;
         }
         return order * fieldA.toLowerCase().localeCompare(fieldB.toLowerCase());
@@ -202,7 +227,12 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
     const startIndex = this.state.page * this.state.perPage;
     // If end is greater than the length of the sequence, slice extracts through to the end of the sequence (arr.length).
     const lastIndex = startIndex + this.state.perPage;
-    return items.slice(startIndex, lastIndex);
+    return items
+      .filter(
+        item =>
+          this.state.filteredTypes.length === 0 || this.state.filteredTypes.includes(item.type)
+      )
+      .slice(startIndex, lastIndex);
   };
 
   private fetchItems = () => {
@@ -239,6 +269,68 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
         {this.props.callToActionButton && (
           <EuiFlexItem grow={false}>{this.props.callToActionButton}</EuiFlexItem>
         )}
+        {this.props.showFilter && (
+          <EuiFlexItem grow={false}>
+            <EuiPopover
+              id="popover"
+              button={
+                <EuiButton
+                  iconType="arrowDown"
+                  iconSide="right"
+                  onClick={() =>
+                    this.setState(({ filterOpen }) => ({
+                      filterOpen: !filterOpen,
+                    }))
+                  }
+                >
+                  Sort and Filter
+                </EuiButton>
+              }
+              isOpen={this.state.filterOpen}
+              closePopover={() => this.setState({ filterOpen: false })}
+            >
+              <EuiRadioGroup
+                options={[
+                  { id: 'no_sort', label: "Don't sort" },
+                  { id: 'asc', label: 'Sort ascending' },
+                  { id: 'desc', label: 'Sort descending' },
+                ]}
+                idSelected={this.state.sortDirection || 'no_sort'}
+                onChange={optionId =>
+                  this.setState({
+                    sortDirection: optionId === 'no_sort' ? undefined : (optionId as Direction),
+                  })
+                }
+              />
+              <EuiSpacer size="m" />
+
+              <EuiTitle size="xxs">
+                <h3>Only show the following objects:</h3>
+              </EuiTitle>
+
+              <EuiSpacer size="s" />
+
+              <EuiCheckboxGroup
+                options={this.props.savedObjectMetaData.map(metaData => ({
+                  id: metaData.type,
+                  label: metaData.name,
+                }))}
+                idToSelectedMap={this.state.filteredTypes.reduce(
+                  (map, type) => ({ ...map, [type]: true }),
+                  {}
+                )}
+                onChange={(selectedType: any) =>
+                  this.setState(({ filteredTypes }) => ({
+                    filteredTypes: filteredTypes.includes(selectedType)
+                      ? filteredTypes.filter(t => t !== selectedType)
+                      : [...filteredTypes, selectedType],
+                    page: 0,
+                  }))
+                }
+              />
+            </EuiPopover>
+          </EuiFlexItem>
+        )}
       </EuiFlexGroup>
     );
   }
@@ -274,15 +366,34 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
             );
           })}
         </EuiListGroup>
-        <EuiPagination
-          activePage={this.state.page}
-          pageCount={Math.ceil(this.state.items.length / this.state.perPage)}
-          onPageClick={page => {
-            this.setState({
-              page,
-            });
-          }}
-        />
+        {this.props.fixedPageSize ? (
+          <EuiPagination
+            activePage={this.state.page}
+            pageCount={this.getPageCount()}
+            onPageClick={page => {
+              this.setState({
+                page,
+              });
+            }}
+          />
+        ) : (
+          <EuiTablePagination
+            activePage={this.state.page}
+            pageCount={this.getPageCount()}
+            onChangePage={page => {
+              this.setState({
+                page,
+              });
+            }}
+            onChangeItemsPerPage={perPage => {
+              this.setState({
+                perPage,
+              });
+            }}
+            itemsPerPage={this.state.perPage}
+            itemsPerPageOptions={[5, 10, 15]}
+          />
+        )}
       </>
     );
   }
