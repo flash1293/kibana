@@ -23,11 +23,16 @@ import React from 'react';
 import chrome from 'ui/chrome';
 
 import {
-  EuiButton,
+  EuiButtonEmpty,
   EuiCheckboxGroup,
   EuiFieldSearch,
+  // @ts-ignore
+  EuiFilterButton,
+  // @ts-ignore
+  EuiFilterSelectItem,
   EuiFlexGroup,
   EuiFlexItem,
+  // @ts-ignore
   EuiFormRow,
   // @ts-ignore
   EuiListGroup,
@@ -36,6 +41,9 @@ import {
   EuiPagination,
   EuiPopover,
   EuiRadioGroup,
+  EuiRadioGroupOption,
+  // @ts-ignore
+  EuiFilterGroup,
   EuiSpacer,
   EuiTablePagination,
   EuiTitle,
@@ -67,6 +75,7 @@ interface SavedObjectFinderUIState {
   sortField?: string;
   sortDirection?: Direction;
   filterOpen: boolean;
+  sortOpen: boolean;
   filteredTypes: string[];
 }
 
@@ -160,6 +169,7 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
       perPage: props.initialPageSize || props.fixedPageSize || 15,
       filter: '',
       filterOpen: false,
+      sortOpen: false,
       filteredTypes: [],
     };
   }
@@ -211,7 +221,7 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
     const items = this.state.items.slice();
     const { sortDirection } = this.state;
 
-    if (sortDirection) {
+    if (sortDirection || this.state.filter) {
       items.sort((a, b) => {
         const fieldA = _.get(a, 'title', '');
         const fieldB = _.get(b, 'title', '');
@@ -246,7 +256,7 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
 
   private renderSearchBar() {
     return (
-      <EuiFlexGroup>
+      <EuiFlexGroup gutterSize="m">
         <EuiFlexItem grow={true}>
           <EuiFieldSearch
             placeholder={i18n.translate('common.ui.savedObjects.finder.searchPlaceholder', {
@@ -265,72 +275,84 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
             data-test-subj="savedObjectFinderSearchInput"
           />
         </EuiFlexItem>
-
-        {this.props.callToActionButton && (
-          <EuiFlexItem grow={false}>{this.props.callToActionButton}</EuiFlexItem>
-        )}
-        {this.props.showFilter && (
-          <EuiFlexItem grow={false}>
-            <EuiPopover
-              id="popover"
-              button={
-                <EuiButton
-                  iconType="arrowDown"
-                  iconSide="right"
-                  onClick={() =>
-                    this.setState(({ filterOpen }) => ({
-                      filterOpen: !filterOpen,
-                    }))
+        <EuiFlexItem grow={false}>
+          <EuiFilterGroup>
+            {this.props.showFilter && (
+              <EuiPopover
+                id="popover"
+                panelClassName="euiFilterGroup__popoverPanel"
+                isOpen={this.state.sortOpen}
+                closePopover={() => this.setState({ sortOpen: false })}
+                button={
+                  <EuiFilterButton
+                    onClick={() =>
+                      this.setState(({ sortOpen }) => ({
+                        sortOpen: !sortOpen,
+                      }))
+                    }
+                  >
+                    Sort
+                  </EuiFilterButton>
+                }
+              >
+                <EuiRadioGroup
+                  options={(this.state.filter
+                    ? [{ id: 'auto', label: 'Best match' }]
+                    : ([] as EuiRadioGroupOption[])
+                  ).concat([
+                    { id: 'asc', label: 'Sort ascending' },
+                    { id: 'desc', label: 'Sort descending' },
+                  ])}
+                  idSelected={this.state.sortDirection || 'auto'}
+                  onChange={optionId =>
+                    this.setState({
+                      sortDirection: optionId === 'auto' ? undefined : (optionId as Direction),
+                    })
                   }
-                >
-                  Sort and Filter
-                </EuiButton>
-              }
-              isOpen={this.state.filterOpen}
-              closePopover={() => this.setState({ filterOpen: false })}
-            >
-              <EuiRadioGroup
-                options={[
-                  { id: 'no_sort', label: "Don't sort" },
-                  { id: 'asc', label: 'Sort ascending' },
-                  { id: 'desc', label: 'Sort descending' },
-                ]}
-                idSelected={this.state.sortDirection || 'no_sort'}
-                onChange={optionId =>
-                  this.setState({
-                    sortDirection: optionId === 'no_sort' ? undefined : (optionId as Direction),
-                  })
+                />
+              </EuiPopover>
+            )}
+            {this.props.showFilter && (
+              <EuiPopover
+                id="popover"
+                panelClassName="euiFilterGroup__popoverPanel"
+                panelPaddingSize="none"
+                isOpen={this.state.filterOpen}
+                closePopover={() => this.setState({ filterOpen: false })}
+                button={
+                  <EuiFilterButton
+                    onClick={() =>
+                      this.setState(({ filterOpen }) => ({
+                        filterOpen: !filterOpen,
+                      }))
+                    }
+                  >
+                    Filter
+                  </EuiFilterButton>
                 }
-              />
-              <EuiSpacer size="m" />
-
-              <EuiTitle size="xxs">
-                <h3>Only show the following objects:</h3>
-              </EuiTitle>
-
-              <EuiSpacer size="s" />
-
-              <EuiCheckboxGroup
-                options={this.props.savedObjectMetaData.map(metaData => ({
-                  id: metaData.type,
-                  label: metaData.name,
-                }))}
-                idToSelectedMap={this.state.filteredTypes.reduce(
-                  (map, type) => ({ ...map, [type]: true }),
-                  {}
-                )}
-                onChange={(selectedType: any) =>
-                  this.setState(({ filteredTypes }) => ({
-                    filteredTypes: filteredTypes.includes(selectedType)
-                      ? filteredTypes.filter(t => t !== selectedType)
-                      : [...filteredTypes, selectedType],
-                    page: 0,
-                  }))
-                }
-              />
-            </EuiPopover>
-          </EuiFlexItem>
-        )}
+              >
+                <div className="euiFilterSelect__items">
+                  {this.props.savedObjectMetaData.map(metaData => (
+                    <EuiFilterSelectItem
+                      key={metaData.type}
+                      checked={this.state.filteredTypes.includes(metaData.type) ? 'on' : false}
+                      onClick={() =>
+                        this.setState(({ filteredTypes }) => ({
+                          filteredTypes: filteredTypes.includes(metaData.type)
+                            ? filteredTypes.filter(t => t !== metaData.type)
+                            : [...filteredTypes, metaData.type],
+                          page: 0,
+                        }))
+                      }
+                    >
+                      {metaData.name}
+                    </EuiFilterSelectItem>
+                  ))}
+                </div>
+              </EuiPopover>
+            )}
+          </EuiFilterGroup>
+        </EuiFlexItem>
       </EuiFlexGroup>
     );
   }
