@@ -166,7 +166,6 @@ function discoverController(
   localStorage,
   i18n,
 ) {
-  debugger;
   const visualizeLoader = Private(VisualizeLoaderProvider);
   let visualizeHandler;
   const Vis = Private(VisProvider);

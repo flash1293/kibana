@@ -372,26 +372,26 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
                   </EuiButtonEmpty>
                 }
               >
-                <EuiText className="euiFilterSelectItem" size="xs">
-                  <FormattedMessage
-                    id="common.ui.savedObjects.finder.filterLabel"
-                    defaultMessage="Only show the following objects:"
-                  />
-                </EuiText>
                 <div className="euiFilterSelect__items">
+                  <EuiText className="euiFilterSelectItem euiFilterSelectItem--heading" size="xs">
+                    <FormattedMessage
+                      id="common.ui.savedObjects.finder.filterLabel"
+                      defaultMessage="Only show the following objects:"
+                    />
+                  </EuiText>
                   {availableSavedObjectMetaData.map(metaData => (
                     <EuiFilterSelectItem
                       key={metaData.type}
                       checked={this.state.filteredTypes.includes(metaData.type) ? 'on' : undefined}
                       data-test-subj={`savedObjectFinderFilter-${metaData.type}`}
-                      onClick={() =>
+                      onClick={() => {
                         this.setState(({ filteredTypes }) => ({
                           filteredTypes: filteredTypes.includes(metaData.type)
                             ? filteredTypes.filter(t => t !== metaData.type)
                             : [...filteredTypes, metaData.type],
                           page: 0,
-                        }))
-                      }
+                        }));
+                      }}
                     >
                       {metaData.name}
                     </EuiFilterSelectItem>

@@ -56,9 +56,9 @@ export class SearchSelection extends React.Component<SearchSelectionProps> {
             key="searchSavedObjectFinder"
             onChoose={this.props.onSearchSelected}
             noItemsMessage={i18n.translate(
-              'kbn.visualize.newVisWizard.savedSearchTab.notFoundLabel',
+              'kbn.visualize.newVisWizard.searchSelection.notFoundLabel',
               {
-                defaultMessage: 'No matching saved searches found.',
+                defaultMessage: 'No matching indices and saved searches found.',
               }
             )}
             savedObjectMetaData={[
