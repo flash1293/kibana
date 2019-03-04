@@ -66,13 +66,23 @@ export class SearchSelection extends React.Component<SearchSelectionProps> {
                 type: 'search',
                 showSavedObject: () => true,
                 getIconForSavedObject: () => 'search',
-                name: 'Search',
+                name: i18n.translate(
+                  'kbn.visualize.newVisWizard.searchSelection.savedObjectType.search',
+                  {
+                    defaultMessage: 'Saved Search',
+                  }
+                ),
               },
               {
                 type: 'index-pattern',
                 showSavedObject: () => true,
                 getIconForSavedObject: () => 'indexPatternApp',
-                name: 'Index Pattern',
+                name: i18n.translate(
+                  'kbn.visualize.newVisWizard.searchSelection.savedObjectType.indexPattern',
+                  {
+                    defaultMessage: 'Index Pattern',
+                  }
+                ),
               },
             ]}
             fixedPageSize={this.fixedPageSize}

@@ -48,11 +48,11 @@ export class DashboardAddPanel extends React.Component {
         {
           defaultMessage: '{savedObjectName} was added to your dashboard',
           values: {
-            selectedTabName: name,
+            savedObjectName: name,
           },
         }
       ),
-      'data-test-subj': this.state.selectedTab.toastDataTestSubj,
+      'data-test-subj': 'addObjectToDashboardSuccess',
     });
   };
 

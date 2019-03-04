@@ -431,6 +431,7 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
               const currentSavedObjectMetaData = savedObjectMetaData.find(
                 metaData => metaData.type === item.type
               );
+              const fullName = `${item.title} (${currentSavedObjectMetaData!.name})`;
               const iconType = (
                 currentSavedObjectMetaData ||
                 ({
@@ -445,14 +446,11 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
                   onClick={
                     onChoose
                       ? () => {
-                          onChoose(
-                            item.id,
-                            item.type,
-                            currentSavedObjectMetaData ? currentSavedObjectMetaData.name : ''
-                          );
+                          onChoose(item.id, item.type, fullName);
                         }
                       : undefined
                   }
+                  title={fullName}
                   data-test-subj={`savedObjectTitle${(item.title || '').split(' ').join('-')}`}
                 />
               );

@@ -151,7 +151,7 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
       await this.filterEmbeddableNames(searchName);
 
       await testSubjects.click(`savedObjectTitle${searchName.split(' ').join('-')}`);
-      await testSubjects.exists('addSavedSearchToDashboardSuccess');
+      await testSubjects.exists('addObjectToDashboardSuccess');
       await this.closeAddPanel();
     }
 
@@ -174,6 +174,7 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
       await this.toggleFilter('visualization');
       await this.filterEmbeddableNames(`"${vizName.replace('-', ' ')}"`);
       await testSubjects.click(`savedObjectTitle${vizName.split(' ').join('-')}`);
+      await testSubjects.exists('addObjectToDashboardSuccess');
       await this.closeAddPanel();
     }
 

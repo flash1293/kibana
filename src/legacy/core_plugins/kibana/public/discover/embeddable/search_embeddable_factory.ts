@@ -19,6 +19,7 @@
 
 import 'ui/doc_table';
 
+import { i18n } from '@kbn/i18n';
 import { EmbeddableFactory } from 'ui/embeddable';
 import {
   EmbeddableInstanceConfiguration,
@@ -36,7 +37,9 @@ export class SearchEmbeddableFactory extends EmbeddableFactory {
     super({
       name: 'search',
       savedObjectMetaData: {
-        name: 'Search',
+        name: i18n.translate('kbn.discover.savedSearch.savedObjectName', {
+          defaultMessage: 'Saved Search',
+        }),
         type: 'search',
         getIconForSavedObject: () => 'search',
         showSavedObject: () => true,

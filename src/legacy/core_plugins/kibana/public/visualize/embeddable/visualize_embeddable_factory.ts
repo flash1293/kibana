@@ -17,6 +17,7 @@
  * under the License.
  */
 
+import { i18n } from '@kbn/i18n';
 import chrome from 'ui/chrome';
 import { EmbeddableFactory } from 'ui/embeddable';
 import { getVisualizeLoader } from 'ui/visualize/loader';
@@ -45,7 +46,7 @@ export class VisualizeEmbeddableFactory extends EmbeddableFactory<VisualizationA
     super({
       name: 'visualization',
       savedObjectMetaData: {
-        name: 'Visualization',
+        name: i18n.translate('kbn.visualize.savedObjectName', { defaultMessage: 'Visualization' }),
         type: 'visualization',
         getIconForSavedObject: savedObject => {
           return (
