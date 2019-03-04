@@ -35,6 +35,8 @@ import {
   // @ts-ignore
   EuiListGroupItem,
   EuiLoadingSpinner,
+  EuiPagination,
+  EuiTablePagination,
 } from '@elastic/eui';
 import { shallow } from 'enzyme';
 import React from 'react';
@@ -351,6 +353,101 @@ describe('SavedObjectsFinder', () => {
         .first()
         .prop('body')
     ).toEqual(noItemsMessage);
+  });
+
+  describe('pagination', () => {
+    const longItemList = new Array(50).fill(undefined).map((_, i) => ({
+      id: String(i),
+      type: 'search',
+      attributes: {
+        title: `Title ${i < 10 ? '0' : ''}${i}`,
+      },
+    }));
+
+    beforeEach(() => {
+      objectsClientStub.returns(Promise.resolve({ savedObjects: longItemList }));
+    });
+
+    it('should show a table pagination with initial per page', async () => {
+      const wrapper = shallow(
+        <SavedObjectFinder initialPageSize={15} savedObjectMetaData={searchMetaData} />
+      );
+      wrapper.instance().componentDidMount!();
+      await nextTick();
+      expect(
+        wrapper
+          .find(EuiTablePagination)
+          .first()
+          .prop('itemsPerPage')
+      ).toEqual(15);
+      expect(wrapper.find(EuiListGroup).children().length).toBe(15);
+    });
+
+    it('should allow switching the page size', async () => {
+      const wrapper = shallow(
+        <SavedObjectFinder initialPageSize={15} savedObjectMetaData={searchMetaData} />
+      );
+      wrapper.instance().componentDidMount!();
+      await nextTick();
+      wrapper
+        .find(EuiTablePagination)
+        .first()
+        .prop('onChangeItemsPerPage')!(5);
+      expect(wrapper.find(EuiListGroup).children().length).toBe(5);
+    });
+
+    it('should switch page correctly', async () => {
+      const wrapper = shallow(
+        <SavedObjectFinder initialPageSize={15} savedObjectMetaData={searchMetaData} />
+      );
+      wrapper.instance().componentDidMount!();
+      await nextTick();
+      wrapper
+        .find(EuiTablePagination)
+        .first()
+        .prop('onChangePage')!(1);
+      expect(
+        wrapper
+          .find(EuiListGroup)
+          .children()
+          .first()
+          .key()
+      ).toBe('15');
+    });
+
+    it('should show an ordinary pagination for fixed page sizes', async () => {
+      const wrapper = shallow(
+        <SavedObjectFinder fixedPageSize={33} savedObjectMetaData={searchMetaData} />
+      );
+      wrapper.instance().componentDidMount!();
+      await nextTick();
+      expect(
+        wrapper
+          .find(EuiPagination)
+          .first()
+          .prop('pageCount')
+      ).toEqual(2);
+      expect(wrapper.find(EuiListGroup).children().length).toBe(33);
+    });
+
+    it('should switch page correctly for fixed page sizes', async () => {
+      const wrapper = shallow(
+        <SavedObjectFinder fixedPageSize={33} savedObjectMetaData={searchMetaData} />
+      );
+      wrapper.instance().componentDidMount!();
+      await nextTick();
+      wrapper
+        .find(EuiPagination)
+        .first()
+        .prop('onPageClick')!(1);
+      expect(
+        wrapper
+          .find(EuiListGroup)
+          .children()
+          .first()
+          .key()
+      ).toBe('33');
+    });
   });
 
   describe('loading state', () => {

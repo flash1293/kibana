@@ -24,7 +24,6 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
   const testSubjects = getService('testSubjects');
   const flyout = getService('flyout');
   const PageObjects = getPageObjects(['header', 'common']);
-  const find = getService('find');
 
   return new class DashboardAddPanel {
     async clickOpenAddPanel() {
@@ -36,14 +35,22 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
       await testSubjects.click('addNewSavedObjectLink');
     }
 
-    async clickSavedSearchTab() {
-      await testSubjects.click('addSavedSearchTab');
+    async toggleFilterPopover() {
+      log.debug('DashboardAddPanel.openFilter');
+      await testSubjects.click('savedObjectFinderFilterButton');
+    }
+
+    async toggleFilter(type) {
+      log.debug(`DashboardAddPanel.addToFilter(${type})`);
+      await this.toggleFilterPopover();
+      await testSubjects.click(`savedObjectFinderFilter-${type}`);
+      await this.toggleFilterPopover();
     }
 
     async addEveryEmbeddableOnCurrentPage() {
       log.debug('addEveryEmbeddableOnCurrentPage');
       const addPanel = await testSubjects.find('dashboardAddPanel');
-      const embeddableRows = await addPanel.findAllByClassName('euiLink');
+      const embeddableRows = await addPanel.findAllByClassName('euiListGroupItem');
       for (let i = 0; i < embeddableRows.length; i++) {
         await embeddableRows[i].click();
         await PageObjects.common.closeToast();
@@ -95,10 +102,10 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
       }
     }
 
-    async waitForEuiTableLoading() {
+    async waitForListLoading() {
       await retry.waitFor('dashboard add panel loading to complete', async () => {
-        const table = await find.byClassName('euiBasicTable');
-        return !((await table.getAttribute('class')).includes('loading'));
+        const spinner = await testSubjects.find('savedObjectFinderLoadingIndicator');
+        return !spinner.exists();
       });
     }
 
@@ -109,6 +116,7 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
     async addEveryVisualization(filter) {
       log.debug('DashboardAddPanel.addEveryVisualization');
       await this.ensureAddPanelIsShowing();
+      await this.toggleFilter('visualization');
       if (filter) {
         await this.filterEmbeddableNames(filter.replace('-', ' '));
       }
@@ -123,7 +131,7 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
     async addEverySavedSearch(filter) {
       log.debug('DashboardAddPanel.addEverySavedSearch');
       await this.ensureAddPanelIsShowing();
-      await this.clickSavedSearchTab();
+      await this.toggleFilter('search');
       if (filter) {
         await this.filterEmbeddableNames(filter.replace('-', ' '));
       }
@@ -139,7 +147,7 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
       log.debug(`addSavedSearch(${searchName})`);
 
       await this.ensureAddPanelIsShowing();
-      await this.clickSavedSearchTab();
+      await this.toggleFilter('search');
       await this.filterEmbeddableNames(searchName);
 
       await testSubjects.click(`savedObjectTitle${searchName.split(' ').join('-')}`);
@@ -163,6 +171,7 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
     async addVisualization(vizName) {
       log.debug(`DashboardAddPanel.addVisualization(${vizName})`);
       await this.ensureAddPanelIsShowing();
+      await this.toggleFilter('visualization');
       await this.filterEmbeddableNames(`"${vizName.replace('-', ' ')}"`);
       await testSubjects.click(`savedObjectTitle${vizName.split(' ').join('-')}`);
       await this.closeAddPanel();
@@ -170,9 +179,9 @@ export function DashboardAddPanelProvider({ getService, getPageObjects }) {
 
     async filterEmbeddableNames(name) {
       // The search input field may be disabled while the table is loading so wait for it
-      await this.waitForEuiTableLoading();
+      await this.waitForListLoading();
       await testSubjects.setValue('savedObjectFinderSearchInput', name);
-      await this.waitForEuiTableLoading();
+      await this.waitForListLoading();
     }
 
     async panelAddLinkExists(name) {

@@ -411,7 +411,7 @@ class SavedObjectFinder extends React.Component<SavedObjectFinderProps, SavedObj
       <EuiFlexGroup justifyContent="center">
         <EuiFlexItem grow={false}>
           <EuiSpacer />
-          <EuiLoadingSpinner />
+          <EuiLoadingSpinner data-test-subj="savedObjectFinderLoadingIndicator" />
         </EuiFlexItem>
       </EuiFlexGroup>
     );
