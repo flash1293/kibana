@@ -19,83 +19,21 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { injectI18n, FormattedMessage } from '@kbn/i18n/react';
+import { i18n } from '@kbn/i18n';
+import { FormattedMessage } from '@kbn/i18n/react';
 import { toastNotifications } from 'ui/notify';
 import { SavedObjectFinder } from 'ui/saved_objects/components/saved_object_finder';
 
 import {
   EuiFlyout,
   EuiFlyoutBody,
-  EuiButton,
-  EuiTab,
+  EuiButtonEmpty,
   EuiSpacer,
   EuiTitle,
-  EuiIcon,
 } from '@elastic/eui';
 
-class DashboardAddPanelUi extends React.Component {
-  constructor(props) {
-    super(props);
-
-    // const tabs = props.embeddableFactories
-    //   .filter(embeddableFactory => Boolean(embeddableFactory.savedObjectMetaData))
-    //   .map(({ name, savedObjectMetaData: { type, icon } }) => ({
-    //     icon,
-    //     id: type,
-    //     name: props.intl.formatMessage({
-    //       // TODO find a way to do this dynamically (embeddableFactory.savedObjectsMetaInformation maybe?)
-    //       id: 'kbn.dashboard.topNav.addPanel.visualizationTabName',
-    //       defaultMessage: type
-    //     }),
-    //     dataTestSubj: `add${type}Tab`,
-    //     toastDataTestSubj: `add${type}ToDashboardSuccess`,
-    //     savedObjectFinder: (
-    //       <SavedObjectFinder
-    //         key={`${type}SavedObjectFinder`}
-    //         // TODO special case for vis, generalize later
-    //         callToActionButton={name === 'visualization' ? addNewVisBtn : undefined}
-    //         onChoose={this.onAddPanel}
-    //         // TODO special case for vis, generalize later
-    //         visTypes={name === 'visualization' ? this.props.visTypes : undefined}
-    //         noItemsMessage={props.intl.formatMessage({
-    //           // TODO find a way to do this dynamically (embeddableFactory.savedObjectsMetaInformation maybe?)
-    //           id: 'kbn.dashboard.topNav.addPanel.visSavedObjectFinder.noMatchingVisualizationsMessage',
-    //           defaultMessage: `No matching ${type} found.`,
-    //         })}
-    //         savedObjectType={type}
-    //       />
-    //     )
-    //   }));
-
-    this.state = {
-      tabs: [],
-      selectedTab: {},
-    };
-  }
-
-  onSelectedTabChanged = tab => {
-    this.setState({
-      selectedTab: tab,
-    });
-  };
-
-  renderTabs() {
-    return this.state.tabs.map(tab => {
-      return (
-        <EuiTab
-          onClick={() => this.onSelectedTabChanged(tab)}
-          isSelected={tab.id === this.state.selectedTab.id}
-          key={tab.id}
-          data-test-subj={tab.dataTestSubj}
-        >
-          <EuiIcon type={tab.icon} size="s" />
-          {tab.name}
-        </EuiTab>
-      );
-    });
-  }
-
-  onAddPanel = (id, type) => {
+export class DashboardAddPanel extends React.Component {
+  onAddPanel = (id, type, name) => {
     this.props.addNewPanel(id, type);
 
     // To avoid the clutter of having toast messages cover flyout
@@ -105,13 +43,13 @@ class DashboardAddPanelUi extends React.Component {
     }
 
     this.lastToast = toastNotifications.addSuccess({
-      title: this.props.intl.formatMessage(
+      title: i18n.translate(
+        'kbn.dashboard.topNav.addPanel.selectedTabAddedToDashboardSuccessMessageTitle',
         {
-          id: 'kbn.dashboard.topNav.addPanel.selectedTabAddedToDashboardSuccessMessageTitle',
-          defaultMessage: '{selectedTabName} was added to your dashboard',
-        },
-        {
-          selectedTabName: this.state.selectedTab.name,
+          defaultMessage: '{savedObjectName} was added to your dashboard',
+          values: {
+            selectedTabName: name,
+          },
         }
       ),
       'data-test-subj': this.state.selectedTab.toastDataTestSubj,
@@ -120,12 +58,17 @@ class DashboardAddPanelUi extends React.Component {
 
   render() {
     const addNewVisBtn = (
-      <EuiButton onClick={this.props.addNewVis} data-test-subj="addNewSavedObjectLink">
+      <EuiButtonEmpty
+        iconSide="left"
+        iconType="plusInCircle"
+        onClick={this.props.addNewVis}
+        data-test-subj="addNewSavedObjectLink"
+      >
         <FormattedMessage
           id="kbn.dashboard.topNav.addPanel.addNewVisualizationButtonLabel"
           defaultMessage="Add new Visualization"
         />
-      </EuiButton>
+      </EuiButtonEmpty>
     );
 
     return (
@@ -140,34 +83,30 @@ class DashboardAddPanelUi extends React.Component {
             </h1>
           </EuiTitle>
 
-          {addNewVisBtn}
+          <EuiSpacer size="s" />
+
           <SavedObjectFinder
             onChoose={this.onAddPanel}
-            noItemsMessage={this.props.intl.formatMessage({
-              // TODO find a way to do this dynamically (embeddableFactory.savedObjectsMetaInformation maybe?)
-              id: 'kbn.dashboard.topNav.addPanel.savedObjectFinder.noMatchingObjectsMessage',
-              defaultMessage: `No matching objects found.`,
-            })}
             savedObjectMetaData={this.props.embeddableFactories
               .filter(embeddableFactory => Boolean(embeddableFactory.savedObjectMetaData))
               .map(({ savedObjectMetaData }) => savedObjectMetaData)}
             showFilter={true}
+            callToActionButton={addNewVisBtn}
+            noItemsMessage={i18n.translate(
+              'kbn.dashboard.topNav.addPanel.noMatchingObjectsMessage',
+              {
+                defaultMessage: 'No matching objects found.',
+              }
+            )}
           />
-
-          <EuiSpacer size="s" />
-
-          {this.state.selectedTab.savedObjectFinder}
         </EuiFlyoutBody>
       </EuiFlyout>
     );
   }
 }
 
-DashboardAddPanelUi.propTypes = {
+DashboardAddPanel.propTypes = {
   onClose: PropTypes.func.isRequired,
-  visTypes: PropTypes.object.isRequired,
   addNewPanel: PropTypes.func.isRequired,
   addNewVis: PropTypes.func.isRequired,
 };
-
-export const DashboardAddPanel = injectI18n(DashboardAddPanelUi);
