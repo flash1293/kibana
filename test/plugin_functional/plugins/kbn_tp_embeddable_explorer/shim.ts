@@ -16,23 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
+import { CoreShim } from '.';
 
-class SamplePanelLink extends ContextMenuAction {
-  constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
-    });
-  }
-
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
+export function createShim(): { core: CoreShim } {
+  return {
+    core: {},
   };
 }
-
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());

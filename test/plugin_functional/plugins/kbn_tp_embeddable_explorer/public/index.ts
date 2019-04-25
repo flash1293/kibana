@@ -16,23 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
 
-class SamplePanelLink extends ContextMenuAction {
-  constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
-    });
-  }
-
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
-}
-
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());
+import { Plugin as EmbeddableExplorer } from './plugin';
+import { createShim } from './shim';
+const embeddableExplorer = new EmbeddableExplorer();
+embeddableExplorer.start(createShim());

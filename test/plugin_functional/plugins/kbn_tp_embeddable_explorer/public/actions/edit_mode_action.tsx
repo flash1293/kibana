@@ -16,23 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
 
-class SamplePanelLink extends ContextMenuAction {
-  constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
-    });
-  }
+import { actionRegistry, triggerRegistry } from 'plugins/embeddable_api/index';
+import { EditModeAction } from 'plugins/embeddable_api/__test__';
+import { CONTEXT_MENU_TRIGGER } from 'plugins/embeddable_api/triggers/trigger_registry';
 
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
-}
-
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());
+const editModeAction = new EditModeAction();
+actionRegistry.addAction(editModeAction);
+triggerRegistry.attachAction({
+  triggerId: CONTEXT_MENU_TRIGGER,
+  actionId: editModeAction.id,
+});

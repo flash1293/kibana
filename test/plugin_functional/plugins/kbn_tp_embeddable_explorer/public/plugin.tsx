@@ -16,23 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { App } from './app/';
+import { CoreShim, PluginShim } from './shim';
 
-class SamplePanelLink extends ContextMenuAction {
-  constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
+const REACT_ROOT_ID = 'embeddableExplorerRoot';
+
+export class Plugin {
+  public start({ core, plugins }: { core: CoreShim; plugins: PluginShim }): void {
+    core.onRenderComplete(() => {
+      const root = document.getElementById(REACT_ROOT_ID);
+      ReactDOM.render(
+        <App embeddableFactories={plugins.embeddableAPI.embeddableFactories} />,
+        root
+      );
     });
   }
-
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
 }
-
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());

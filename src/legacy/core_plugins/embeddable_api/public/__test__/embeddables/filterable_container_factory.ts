@@ -16,23 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
 
-class SamplePanelLink extends ContextMenuAction {
+import { embeddableFactories, EmbeddableFactory } from 'plugins/embeddable_api/index';
+import { Container } from 'plugins/embeddable_api/containers';
+import {
+  FilterableContainer,
+  FilterableContainerInput,
+  FILTERABLE_CONTAINER,
+} from './filterable_container';
+
+export class FilterableContainerFactory extends EmbeddableFactory<FilterableContainerInput> {
   constructor() {
     super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
+      name: FILTERABLE_CONTAINER,
     });
   }
 
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
+  public getOutputSpec() {
+    return {};
+  }
+
+  public create(initialInput: FilterableContainerInput, parent?: Container) {
+    return Promise.resolve(new FilterableContainer(initialInput, embeddableFactories, parent));
+  }
 }
 
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());
+embeddableFactories.registerFactory(new FilterableContainerFactory());

@@ -16,23 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
 
-class SamplePanelLink extends ContextMenuAction {
-  constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
+jest.mock('ui/metadata', () => ({
+  metadata: {
+    branch: 'my-metadata-branch',
+    version: 'my-metadata-version',
+  },
+}));
+
+import { skip } from 'rxjs/operators';
+import { HelloWorldEmbeddable } from '../__test__/index';
+
+test('Embeddable calls input subscribers when changed', async done => {
+  const hello = new HelloWorldEmbeddable({ id: '123', firstName: 'Sue' });
+
+  const subscription = hello
+    .getInput$()
+    .pipe(skip(1))
+    .subscribe(input => {
+      expect(input.nameTitle).toEqual('Dr.');
+      done();
+      subscription.unsubscribe();
     });
-  }
 
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
-}
-
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());
+  hello.graduateWithPhd();
+});

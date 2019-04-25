@@ -16,23 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
+import { Embeddable, EmbeddableInput } from 'plugins/embeddable_api/index';
+import { EmbeddableOutput } from 'plugins/embeddable_api/embeddables';
 
-class SamplePanelLink extends ContextMenuAction {
-  constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
-    });
+export const EMPTY_EMBEDDABLE = 'EMPTY_EMBEDDABLE';
+
+export class EmptyEmbeddable extends Embeddable<EmbeddableInput, EmbeddableOutput> {
+  constructor(initialInput: EmbeddableInput) {
+    super(EMPTY_EMBEDDABLE, initialInput, {});
   }
-
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
+  public render() {}
 }
-
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());

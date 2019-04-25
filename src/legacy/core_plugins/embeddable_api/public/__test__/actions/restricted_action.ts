@@ -16,23 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
 
-class SamplePanelLink extends ContextMenuAction {
-  constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
-    });
+import { Action, ActionContext } from '../../actions';
+
+export const RESTRICTED_ACTION = 'RESTRICTED_ACTION';
+
+export class RestrictedAction extends Action {
+  private isCompatibleFn: (context: ActionContext) => boolean;
+  constructor(isCompatible: (context: ActionContext) => boolean) {
+    super(RESTRICTED_ACTION);
+    this.isCompatibleFn = isCompatible;
   }
 
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
-}
+  getTitle() {
+    return `I am only sometimes compatible`;
+  }
 
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());
+  isCompatible(context: ActionContext) {
+    return Promise.resolve(this.isCompatibleFn(context));
+  }
+
+  execute() {}
+}

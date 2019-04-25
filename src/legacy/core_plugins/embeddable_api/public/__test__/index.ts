@@ -16,23 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
 
-class SamplePanelLink extends ContextMenuAction {
-  constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
-    });
-  }
+export {
+  EmptyEmbeddable,
+  HelloWorldEmbeddableFactory,
+  HELLO_WORLD_EMBEDDABLE,
+  HelloWorldEmbeddable,
+  HelloWorldInput,
+  HelloWorldContainer,
+  FilterableContainer,
+  FilterableEmbeddable,
+  FilterableEmbeddableFactory,
+  FILTERABLE_EMBEDDABLE,
+  FILTERABLE_CONTAINER,
+  FilterableContainerInput,
+  FilterableEmbeddableInput,
+} from './embeddables';
 
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
-}
-
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());
+export { SayHelloAction, EditModeAction, HelloWorldAction, RestrictedAction } from './actions';

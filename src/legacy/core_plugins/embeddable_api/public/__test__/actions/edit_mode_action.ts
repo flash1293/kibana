@@ -16,23 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ContextMenuAction,
-  ContextMenuActionsRegistryProvider,
-} from 'plugins/embeddable_api/index';
 
-class SamplePanelLink extends ContextMenuAction {
+import { ViewMode } from 'plugins/embeddable_api/types';
+import { Action, ActionContext } from '../../actions';
+
+export const EDIT_MODE_ACTION = 'EDIT_MODE_ACTION';
+
+export class EditModeAction extends Action {
   constructor() {
-    super({
-      displayName: 'Sample Panel Link',
-      id: 'samplePanelLink',
-      parentPanelId: 'mainMenu',
-    });
+    super(EDIT_MODE_ACTION);
   }
 
-  public getHref = () => {
-    return 'https://example.com/kibana/test';
-  };
-}
+  getTitle() {
+    return `I should only show up in edit mode`;
+  }
 
-ContextMenuActionsRegistryProvider.register(() => new SamplePanelLink());
+  isCompatible(context: ActionContext) {
+    return Promise.resolve(context.embeddable.getInput().viewMode === ViewMode.EDIT);
+  }
+
+  execute() {
+    return;
+  }
+}
