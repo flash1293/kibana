@@ -16,15 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-import { combineReducers } from 'redux';
-import { dashboard } from './dashboard/reducers';
-import { CoreKibanaState } from './selectors';
-
-/**
- * Only a single reducer now, but eventually there should be one for each sub app that is part of the
- * core kibana plugins.
- */
-export const reducers = combineReducers<CoreKibanaState>({
-  dashboard,
-});
+export { DisabledLabEmbeddable } from './disabled_lab_embeddable';
+export { VisualizeEmbeddable, VisualizeInput } from './visualize_embeddable';
+export {
+  VisualizeEmbeddableFactory,
+  VISUALIZE_EMBEDDABLE_TYPE,
+} from './visualize_embeddable_factory';

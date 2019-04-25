@@ -18,6 +18,8 @@
  */
 
 import uuid from 'uuid';
+import { i18n } from '@kbn/i18n';
+import { Subscription } from 'rxjs';
 import {
   Embeddable,
   EmbeddableFactoryRegistry,
@@ -65,6 +67,8 @@ export abstract class Container<
   } = {};
   public readonly embeddableFactories: EmbeddableFactoryRegistry;
 
+  private subscription: Subscription;
+
   constructor(
     type: string,
     input: I,
@@ -75,6 +79,7 @@ export abstract class Container<
     super(type, input, output, parent);
     this.embeddableFactories = embeddableFactories;
     this.initializeEmbeddables();
+    this.subscription = this.getInput$().subscribe(() => this.maybeUpdateChildren());
   }
 
   public updateInputForChild<EEI extends EmbeddableInput = EmbeddableInput>(
@@ -82,7 +87,11 @@ export abstract class Container<
     changes: Partial<EEI>
   ) {
     if (!this.input.panels[id]) {
-      throw new Error();
+      throw new Error(
+        i18n.translate('embeddableApi.errors.paneldoesNotExist', {
+          defaultMessage: 'Panel not found.',
+        })
+      );
     }
     const panels = {
       panels: {
@@ -117,11 +126,10 @@ export abstract class Container<
     );
     this.children[embeddable.id] = embeddable;
     this.updateOutput({
-      ...this.output,
       embeddableLoaded: {
         [panelState.embeddableId]: true,
       },
-    });
+    } as Partial<O>);
     return embeddable;
   }
 
@@ -145,19 +153,22 @@ export abstract class Container<
     this.children[embeddable.id] = embeddable;
 
     this.updateOutput({
-      ...this.output,
       embeddableLoaded: {
         [panelState.embeddableId]: true,
       },
-    });
+    } as Partial<O>);
     return embeddable;
   }
 
   public removeEmbeddable(embeddableId: string) {
+    // Clean up
     const embeddable = this.getChild(embeddableId);
     embeddable.destroy();
+
+    // Remove references.
     delete this.children[embeddableId];
 
+    // Update input state.
     const changedInput: { panels: { [key: string]: PanelState } } = {
       panels: {},
     };
@@ -167,6 +178,8 @@ export abstract class Container<
       }
     });
     this.updateInput({ ...changedInput } as Partial<I>);
+
+    // Update output state.
     this.updateOutput({
       embeddableLoaded: {
         ...this.output.embeddableLoaded,
@@ -308,5 +321,48 @@ export abstract class Container<
       }
     });
     return explicitInput;
+  }
+
+  private onPanelRemoved(id: string) {
+    // Clean up
+    const embeddable = this.getChild(id);
+    embeddable.destroy();
+
+    // Remove references.
+    delete this.children[id];
+
+    // Update output state.
+    this.updateOutput({
+      embeddableLoaded: {
+        ...this.output.embeddableLoaded,
+        [id]: undefined,
+      },
+    } as Partial<O>);
+  }
+
+  private async onPanelAdded(panel: PanelState) {
+    const factory = this.embeddableFactories.getFactoryByName(panel.type);
+    const embeddable = await factory.create<Embeddable>(
+      this.getInputForChild(panel.embeddableId),
+      this
+    );
+    this.children[embeddable.id] = embeddable;
+    this.updateOutput({
+      embeddableLoaded: {
+        [panel.embeddableId]: true,
+      },
+    } as Partial<O>);
+    return embeddable;
+  }
+
+  private maybeUpdateChildren() {
+    const allIds = Object.keys({ ...this.input.panels, ...this.children });
+    allIds.forEach(id => {
+      if (this.input.panels[id] !== undefined && this.children[id] === undefined) {
+        this.onPanelAdded(this.input.panels[id]);
+      } else if (this.input.panels[id] === undefined && this.children[id] !== undefined) {
+        this.onPanelRemoved(id);
+      }
+    });
   }
 }

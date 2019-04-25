@@ -17,5 +17,15 @@
  * under the License.
  */
 
-export * from './dashboard_selectors';
-export { CoreKibanaState } from './types';
+ export interface SaveOptions {
+  confirmOverwrite: boolean;
+  isTitleDuplicateConfirmed: boolean;
+  onTitleDuplicate: () => void;
+ }
+
+export interface SavedObject {
+  save: (
+    saveOptions: SaveOptions
+  ) => Promise<string>;
+  copyOnSave: boolean;
+}

@@ -422,3 +422,73 @@ test('Explicit embeddable input mapped to undefined will default to inherited', 
     derivedFilter,
   ]);
 });
+
+test('Panel removed from input state', async done => {
+  const container = new FilterableContainer(
+    { id: 'hello', panels: {}, filters: [] },
+    embeddableFactories
+  );
+
+  const embeddable = await container.addNewEmbeddable<
+    FilterableEmbeddableInput,
+    FilterableEmbeddable
+  >(FILTERABLE_EMBEDDABLE, {});
+
+  const newInput = {
+    ...container.getInput(),
+    panels: {
+      ...container.getInput().panels,
+      [embeddable.id]: undefined,
+    },
+  };
+
+  const subscription = container
+    .getOutput$()
+    .pipe(skip(1))
+    .subscribe(() => {
+      expect(container.getChild(embeddable.id)).toBeUndefined();
+      expect(container.getOutput().embeddableLoaded[embeddable.id]).toBeUndefined();
+      subscription.unsubscribe();
+      done();
+    });
+
+  container.updateInput(newInput);
+});
+
+test('Panel added to input state', async done => {
+  const container = new FilterableContainer(
+    { id: 'hello', panels: {}, filters: [] },
+    embeddableFactories
+  );
+
+  const embeddable = await container.addNewEmbeddable<
+    FilterableEmbeddableInput,
+    FilterableEmbeddable
+  >(FILTERABLE_EMBEDDABLE, {});
+
+  const newInput = {
+    ...container.getInput(),
+    panels: {
+      ...container.getInput().panels,
+      [embeddable.id]: undefined,
+    },
+  };
+
+  const container2 = new FilterableContainer(
+    { id: 'hello', panels: {}, filters: [] },
+    embeddableFactories
+  );
+
+  const subscription = container2
+    .getOutput$()
+    .pipe(skip(1))
+    .subscribe(() => {
+      expect(container.getChild(embeddable.id)).toBeDefined();
+      expect(container.getOutput().embeddableLoaded[embeddable.id]).toBe(true);
+      subscription.unsubscribe();
+      done();
+    });
+
+  // Container 1 has the panel in it's array, copy it to container2.
+  container2.updateInput(container.getInput());
+});

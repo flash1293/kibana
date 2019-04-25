@@ -17,22 +17,14 @@
  * under the License.
  */
 
-import { Action } from 'redux';
-import { ThunkAction } from 'redux-thunk';
-import { DashboardState } from '../dashboard/selectors';
+import { i18n } from '@kbn/i18n';
 
-export interface CoreKibanaState {
-  readonly dashboard: DashboardState;
+export class IncompatibleActionError extends Error {
+  constructor() {
+    super(
+      i18n.translate('embeddableApi.errors.incompatibleAction', {
+        defaultMessage: 'Action is incompatible',
+      })
+    );
+  }
 }
-
-export interface KibanaAction<T, P> extends Action {
-  readonly type: T;
-  readonly payload: P;
-}
-
-export type KibanaThunk<
-  R = Action | Promise<Action> | void,
-  S = CoreKibanaState,
-  E = any,
-  A extends Action = Action
-> = ThunkAction<R, S, E, A>;

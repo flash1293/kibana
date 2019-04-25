@@ -17,12 +17,14 @@
  * under the License.
  */
 
+import { i18n } from '@kbn/i18n';
 import { Container, ContainerInput } from '../containers';
-import { EmbeddableInput, Embeddable, EmbeddableOutput } from '../embeddables';
+import { Embeddable } from '../embeddables';
 import { APPLY_FILTER_TRIGGER, triggerRegistry } from '../triggers';
 import { Filter } from '../types';
 import { Action } from './action';
 import { actionRegistry } from './action_registry';
+import { IncompatibleActionError } from './incompatible_action_error';
 
 interface ApplyFilterContainerInput extends ContainerInput {
   filters: Filter[];
@@ -31,29 +33,24 @@ interface ApplyFilterContainerInput extends ContainerInput {
 const APPLY_FILTER_ACTION_ID = 'APPLY_FILTER_ACTION_ID';
 
 function containerAcceptsFilterInput(
-  container: Embeddable | Container<{ id: string }, {}, ApplyFilterContainerInput>
-): container is Container<{ id: string }, {}, ApplyFilterContainerInput> {
-  return (
-    (container as Container<{ id: string }, {}, ApplyFilterContainerInput>).getInput().filters !==
-    undefined
-  );
+  container: Embeddable | Container | Container<any, ApplyFilterContainerInput>
+): container is Container<any, ApplyFilterContainerInput> {
+  return (container as Container<any, ApplyFilterContainerInput>).getInput().filters !== undefined;
 }
 
-export class ApplyFilterAction extends Action<
-  Embeddable,
-  Container<EmbeddableInput, EmbeddableOutput, ApplyFilterContainerInput>,
-  { filters: Filter[] }
-> {
+export class ApplyFilterAction extends Action<Embeddable, Container, { filters: Filter[] }> {
   constructor() {
     super(APPLY_FILTER_ACTION_ID);
   }
 
   public getTitle() {
-    return 'Apply filter to current view';
+    return i18n.translate('embeddableApi.actions.applyFilterActionTitle', {
+      defaultMessage: 'Apply filter to current view',
+    });
   }
 
   public isCompatible(context: { embeddable: Embeddable }) {
-    let root = context.embeddable;
+    let root: Embeddable | Container = context.embeddable;
     while (root.parent) {
       root = root.parent;
     }
@@ -71,15 +68,21 @@ export class ApplyFilterAction extends Action<
     if (!triggerContext) {
       throw new Error('Applying a filter requires a filter as context');
     }
-    let root = embeddable;
+    let root: Embeddable | Container = embeddable;
     while (root.parent) {
       root = root.parent;
     }
-    (root as Container<{ id: string }, {}, ApplyFilterContainerInput>).updateInput({
+
+    if (!containerAcceptsFilterInput(root)) {
+      throw new IncompatibleActionError();
+    }
+
+    root.updateInput({
       filters: triggerContext.filters,
     });
   }
 }
+
 const applyFilterAction = new ApplyFilterAction();
 if (!actionRegistry.getAction(applyFilterAction.id)) {
   actionRegistry.addAction(new ApplyFilterAction());

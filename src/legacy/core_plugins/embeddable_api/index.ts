@@ -17,7 +17,6 @@
  * under the License.
  */
 
-// @ts-ignore
 import { resolve } from 'path';
 
 // eslint-disable-next-line import/no-default-export
