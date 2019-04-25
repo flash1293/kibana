@@ -16,31 +16,3 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-export interface GridData {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string;
-}
-
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
-  readonly gridData: GridData;
-  readonly title?: string;
-}
-
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
-}

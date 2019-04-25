@@ -17,30 +17,17 @@
  * under the License.
  */
 
-export interface GridData {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string;
-}
+export const DashboardConstants = {
+  ADD_VISUALIZATION_TO_DASHBOARD_MODE_PARAM: 'addToDashboard',
+  NEW_VISUALIZATION_ID_PARAM: 'addVisualization',
+  LANDING_PAGE_PATH: '/dashboards',
+  CREATE_NEW_DASHBOARD_URL: '/dashboard',
+};
+export const DASHBOARD_GRID_COLUMN_COUNT = 48;
+export const DASHBOARD_GRID_HEIGHT = 20;
+export const DEFAULT_PANEL_WIDTH = DASHBOARD_GRID_COLUMN_COUNT / 2;
+export const DEFAULT_PANEL_HEIGHT = 15;
 
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
-  readonly gridData: GridData;
-  readonly title?: string;
-}
-
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
+export function createDashboardEditUrl(id: string) {
+  return `/dashboard/${id}`;
 }

@@ -17,30 +17,20 @@
  * under the License.
  */
 
-export interface GridData {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string;
+import { ContextMenuAction } from 'plugins/embeddable_api/index';
+
+class PanelActionsStore {
+  public actions: ContextMenuAction[] = [];
+
+  /**
+   *
+   * @type {IndexedArray} panelActionsRegistry
+   */
+  public initializeFromRegistry(panelActionsRegistry: ContextMenuAction[]) {
+    panelActionsRegistry.forEach(panelAction => {
+      this.actions.push(panelAction);
+    });
+  }
 }
 
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
-  readonly gridData: GridData;
-  readonly title?: string;
-}
-
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
-}
+export const panelActionsStore = new PanelActionsStore();

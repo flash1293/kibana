@@ -17,30 +17,24 @@
  * under the License.
  */
 
-export interface GridData {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string;
-}
+/**
+ * A poor excuse for a mock just to get some basic tests to run in jest without requiring the injector.
+ * This could be improved if we extract the appState and state classes externally of their angular providers.
+ * @return {AppStateMock}
+ */
+export function getAppStateMock() {
+  class AppStateMock {
+    constructor(defaults: any) {
+      Object.assign(this, defaults);
+    }
 
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
-  readonly gridData: GridData;
-  readonly title?: string;
-}
+    on() {}
+    off() {}
+    toJSON() {
+      return '';
+    }
+    save() {}
+  }
 
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
+  return AppStateMock;
 }

@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { PanelState } from '../../../embeddable_api/public/index';
+export type PanelId = string;
+export type SavedObjectId = string;
 
 export interface GridData {
   w: number;
@@ -25,22 +28,12 @@ export interface GridData {
   i: string;
 }
 
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
+export interface DashboardPanelState<
+  E extends { [key: string]: unknown } = { [key: string]: unknown }
+> extends PanelState<E> {
   readonly gridData: GridData;
-  readonly title?: string;
 }
 
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
+export interface PanelStateMap<E = unknown> {
+  [panelId: string]: DashboardPanelState<E>;
 }

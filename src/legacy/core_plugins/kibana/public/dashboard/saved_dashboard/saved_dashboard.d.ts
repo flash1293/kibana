@@ -17,30 +17,26 @@
  * under the License.
  */
 
-export interface GridData {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string;
-}
+import { SearchSource } from 'ui/courier';
+import { SavedObject } from 'ui/saved_objects/saved_object';
 
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
-  readonly gridData: GridData;
-  readonly title?: string;
-}
-
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
+export interface SavedObjectDashboard extends SavedObject {
+  id?: string;
+  copyOnSave: boolean;
+  timeRestore: boolean;
+  timeTo: string;
+  timeFrom: string;
+  title: string;
+  description?: string;
+  panelsJSON: string;
+  optionsJSON: string | undefined;
+  lastSavedTitle: string;
+  searchSource: SearchSource;
+  destroy: () => void;
+  refreshInterval?: {
+    display: string;
+    pause: boolean;
+    section: string;
+    value: string;
+  };
 }

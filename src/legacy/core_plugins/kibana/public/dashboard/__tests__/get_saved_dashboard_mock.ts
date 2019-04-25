@@ -17,30 +17,28 @@
  * under the License.
  */
 
-export interface GridData {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string;
-}
+import { SavedObjectDashboard } from '../saved_dashboard/saved_dashboard';
 
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
-  readonly gridData: GridData;
-  readonly title?: string;
-}
-
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
+export function getSavedDashboardMock(
+  config?: Partial<SavedObjectDashboard>
+): SavedObjectDashboard {
+  return {
+    id: '123',
+    title: 'my dashboard',
+    panelsJSON: '[]',
+    searchSource: {
+      getOwnField: (param: any) => param,
+    },
+    copyOnSave: false,
+    timeRestore: false,
+    timeTo: 'now',
+    timeFrom: 'now-15m',
+    optionsJSON: '',
+    lastSavedTitle: '',
+    destroy: () => {},
+    save: () => {
+      return Promise.resolve('123');
+    },
+    ...config,
+  };
 }

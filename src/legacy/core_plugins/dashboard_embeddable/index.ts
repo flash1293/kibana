@@ -17,30 +17,15 @@
  * under the License.
  */
 
-export interface GridData {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string;
-}
+import { resolve } from 'path';
 
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
-  readonly gridData: GridData;
-  readonly title?: string;
-}
-
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
+// eslint-disable-next-line import/no-default-export
+export default function(kibana: any) {
+  return new kibana.Plugin({
+    uiExports: {
+      embeddableActions: ['plugins/dashboard_embeddable/actions/expand_panel_action'],
+      embeddableFactories: ['plugins/dashboard_embeddable/embeddable/dashboard_container_factory'],
+      styleSheetPaths: resolve(__dirname, 'public/index.scss'),
+    },
+  });
 }

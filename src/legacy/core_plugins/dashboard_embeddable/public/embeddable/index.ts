@@ -17,30 +17,13 @@
  * under the License.
  */
 
-export interface GridData {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string;
-}
+export { DASHBOARD_CONTAINER_TYPE, DashboardContainerFactory } from './dashboard_container_factory';
+export {
+  DashboardContainer,
+  DashboardContainerInput,
+  DashboardEmbeddable,
+} from './dashboard_container';
+export { createPanelState, isErrorEmbeddable } from './panel';
 
-export interface SavedDashboardPanel {
-  readonly id?: string;
-  readonly version: string;
-  readonly type: string;
-  readonly panelIndex: string;
-  readonly embeddableConfig: any;
-  readonly gridData: GridData;
-  readonly title?: string;
-}
-
-export interface Pre61SavedDashboardPanel {
-  size_x: number;
-  size_y: number;
-  row: number;
-  col: number;
-  panelIndex: any; // earlier versions allowed this to be number or string
-  id: string;
-  type: string;
-}
+export * from './types';
+export { DASHBOARD_GRID_COLUMN_COUNT } from './dashboard_constants';
