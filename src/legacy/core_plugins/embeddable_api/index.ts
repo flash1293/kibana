@@ -17,13 +17,14 @@
  * under the License.
  */
 
-// @ts-ignore: implicit any for JS file
-import { uiRegistry } from '../registry/_registry';
+// @ts-ignore
+import { resolve } from 'path';
 
-/**
- * Registry of functions (EmbeddableFactoryProviders) which return an EmbeddableFactory.
- */
-export const EmbeddableFactoriesRegistryProvider = uiRegistry({
-  index: ['name'],
-  name: 'embeddableFactories',
-});
+// eslint-disable-next-line import/no-default-export
+export default function(kibana: any) {
+  return new kibana.Plugin({
+    uiExports: {
+      styleSheetPaths: resolve(__dirname, 'public/index.scss'),
+    },
+  });
+}

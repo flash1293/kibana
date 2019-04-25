@@ -17,20 +17,7 @@
  * under the License.
  */
 
-import { ContainerState, Embeddable } from 'ui/embeddable';
-
-/**
- * Exposes information about the current state of the panel and the embeddable rendered internally.
- */
-export interface PanelActionAPI {
-  /**
-   * The embeddable that resides inside this action. It's possible it's undefined if the embeddable has not been returned from
-   * the EmbeddableFactory yet.
-   */
-  embeddable?: Embeddable;
-
-  /**
-   * Information about the current state of the panel and dashboard.
-   */
-  containerState: ContainerState;
-}
+export { getEditPanelAction } from './get_edit_panel_action';
+export { InspectPanelAction } from './inspect_panel_action';
+export { ADD_PANEL_ACTION_ID, AddPanelAction } from './add_panel';
+export { RemovePanelAction } from './remove_panel_action';

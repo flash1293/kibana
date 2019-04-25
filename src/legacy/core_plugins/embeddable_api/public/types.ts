@@ -17,35 +17,49 @@
  * under the License.
  */
 
-import { ReactElement } from 'react';
-import { PanelActionAPI } from './types';
-
-interface ContextMenuPanelOptions {
-  getContent?: (panelActionAPI: PanelActionAPI) => ReactElement<any> | HTMLElement | undefined;
-}
-
-interface ContextMenuPanelConfig {
+export interface PropertySpec {
+  displayName: string;
+  accessPath: string;
   id: string;
-  title: string;
+  description: string;
+  value?: string;
 }
 
-export class ContextMenuPanel {
-  public readonly id: string;
-  public readonly title: string;
+export interface OutputSpec {
+  [id: string]: PropertySpec;
+}
 
-  constructor(config: ContextMenuPanelConfig, options: ContextMenuPanelOptions = {}) {
-    this.id = config.id;
-    this.title = config.title;
+export enum ViewMode {
+  EDIT = 'edit',
+  VIEW = 'view',
+}
+export interface TimeRange {
+  to: string;
+  from: string;
+}
 
-    if (options.getContent) {
-      this.getContent = options.getContent;
-    }
-  }
+export interface RefreshConfig {
+  pause: boolean;
+  value: number;
+}
 
-  /**
-   * Optional, could be composed of actions instead of content.
-   */
-  public getContent(panelActionAPI: PanelActionAPI): ReactElement<any> | HTMLElement | undefined {
-    return;
-  }
+export interface FilterMeta {
+  disabled: boolean;
+}
+
+export interface Filter {
+  meta: FilterMeta;
+  query: object;
+}
+
+export type Filters = Filter[];
+
+export enum QueryLanguageType {
+  KUERY = 'kuery',
+  LUCENE = 'lucene',
+}
+
+export interface Query {
+  language: QueryLanguageType;
+  query: string;
 }

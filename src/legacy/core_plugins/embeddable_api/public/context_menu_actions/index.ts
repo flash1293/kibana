@@ -17,8 +17,9 @@
  * under the License.
  */
 
-export { EmbeddableFactory, OnEmbeddableStateChanged } from './embeddable_factory';
-export * from './embeddable';
-export * from './context_menu_actions';
-export { EmbeddableFactoriesRegistryProvider } from './embeddable_factories_registry';
-export { ContainerState, EmbeddableState, Query, Filters, TimeRange, RefreshConfig } from './types';
+export { ContextMenuPanel } from './context_menu_panel';
+export { ContextMenuAction } from './context_menu_action';
+export { ContextMenuActionsRegistryProvider } from './context_menu_actions_registry';
+export { buildEuiContextMenuPanels } from './build_eui_context_menu_panels';
+export * from './types';
+export { openContextMenu } from './open_context_menu';

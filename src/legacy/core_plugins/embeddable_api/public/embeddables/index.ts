@@ -17,8 +17,11 @@
  * under the License.
  */
 
-export { ContextMenuPanel } from './context_menu_panel';
-export { ContextMenuAction } from './context_menu_action';
-export { ContextMenuActionsRegistryProvider } from './context_menu_actions_registry';
-export { buildEuiContextMenuPanels } from './build_eui_context_menu_panels';
-export { PanelActionAPI } from './types';
+export { Embeddable, EmbeddableOutput, EmbeddableInput } from './embeddable';
+export {
+  EmbeddableInstanceConfiguration,
+  EmbeddableFactory,
+  OutputSpec,
+} from './embeddable_factory';
+export { EmbeddableFactoryRegistry, embeddableFactories } from './embeddable_factories_registry';
+export { ErrorEmbeddable, isErrorEmbeddable } from './error_embeddable';

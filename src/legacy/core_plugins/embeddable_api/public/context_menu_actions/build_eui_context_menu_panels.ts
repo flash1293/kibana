@@ -19,14 +19,20 @@
 
 import { EuiContextMenuPanelDescriptor, EuiContextMenuPanelItemDescriptor } from '@elastic/eui';
 import _ from 'lodash';
-import { ContainerState, ContextMenuAction, ContextMenuPanel, Embeddable } from 'ui/embeddable';
+import { Container } from '../containers';
+import { Embeddable } from '../embeddables';
+import { ContextMenuAction } from './context_menu_action';
+import { ContextMenuPanel } from './context_menu_panel';
 
 /**
  * Loops through allActions and extracts those that belong on the given contextMenuPanelId
  * @param {string} contextMenuPanelId
  * @param {Array.<ContextMenuAction>} allActions
  */
-function getActionsForPanel(contextMenuPanelId: string, allActions: ContextMenuAction[]) {
+function getActionsForPanel<E extends Embeddable<any, any>, C extends Container<any, any, any>>(
+  contextMenuPanelId: string,
+  allActions: Array<ContextMenuAction<E, C>>
+) {
   return allActions.filter(action => action.parentPanelId === contextMenuPanelId);
 }
 
@@ -42,22 +48,25 @@ function getActionsForPanel(contextMenuPanelId: string, allActions: ContextMenuA
  *     need to be moved to the top level for EUI.
  *  }}
  */
-function buildEuiContextMenuPanelItemsAndChildPanels({
+function buildEuiContextMenuPanelItemsAndChildPanels<
+  E extends Embeddable<any, any>,
+  C extends Container<any, any, any>
+>({
   contextMenuPanelId,
   actions,
   embeddable,
-  containerState,
+  container,
 }: {
   contextMenuPanelId: string;
-  actions: ContextMenuAction[];
-  embeddable?: Embeddable;
-  containerState: ContainerState;
+  actions: Array<ContextMenuAction<E, C>>;
+  embeddable: E;
+  container?: C;
 }) {
   const items: EuiContextMenuPanelItemDescriptor[] = [];
   const childPanels: EuiContextMenuPanelDescriptor[] = [];
   const actionsForPanel = getActionsForPanel(contextMenuPanelId, actions);
   actionsForPanel.forEach(action => {
-    const isVisible = action.isVisible({ embeddable, containerState });
+    const isVisible = action.isVisible({ embeddable, container });
     if (!isVisible) {
       return;
     }
@@ -68,7 +77,7 @@ function buildEuiContextMenuPanelItemsAndChildPanels({
           contextMenuPanel: action.childContextMenuPanel,
           actions,
           embeddable,
-          containerState,
+          container,
         })
       );
     }
@@ -76,7 +85,7 @@ function buildEuiContextMenuPanelItemsAndChildPanels({
     items.push(
       convertPanelActionToContextMenuItem({
         action,
-        containerState,
+        container,
         embeddable,
       })
     );
@@ -94,22 +103,25 @@ function buildEuiContextMenuPanelItemsAndChildPanels({
  * @param {ContainerState} containerState
  * @return {EuiContextMenuPanelDescriptor[]} An array of context menu panels to be used in the eui react component.
  */
-export function buildEuiContextMenuPanels({
+export function buildEuiContextMenuPanels<
+  E extends Embeddable = Embeddable,
+  C extends Container = Container
+>({
   contextMenuPanel,
   actions,
   embeddable,
-  containerState,
+  container,
 }: {
-  contextMenuPanel: ContextMenuPanel;
-  actions: ContextMenuAction[];
-  embeddable?: Embeddable;
-  containerState: ContainerState;
+  contextMenuPanel: ContextMenuPanel<E, C>;
+  actions: Array<ContextMenuAction<E, C>>;
+  embeddable: E;
+  container?: C;
 }): EuiContextMenuPanelDescriptor[] {
   const euiContextMenuPanel: EuiContextMenuPanelDescriptor = {
     id: contextMenuPanel.id,
     title: contextMenuPanel.title,
     items: [],
-    content: contextMenuPanel.getContent({ embeddable, containerState }),
+    content: contextMenuPanel.getContent({ embeddable, container }),
   };
   const contextMenuPanels = [euiContextMenuPanel];
 
@@ -117,7 +129,7 @@ export function buildEuiContextMenuPanels({
     contextMenuPanelId: contextMenuPanel.id,
     actions,
     embeddable,
-    containerState,
+    container,
   });
 
   euiContextMenuPanel.items = items;
@@ -131,33 +143,36 @@ export function buildEuiContextMenuPanels({
  * @param {Embeddable} embeddable
  * @return {EuiContextMenuPanelItemDescriptor}
  */
-function convertPanelActionToContextMenuItem({
+function convertPanelActionToContextMenuItem<
+  E extends Embeddable<any, any>,
+  C extends Container<any, any, any>
+>({
   action,
-  containerState,
+  container,
   embeddable,
 }: {
-  action: ContextMenuAction;
-  containerState: ContainerState;
-  embeddable?: Embeddable;
+  action: ContextMenuAction<E, C>;
+  container?: C;
+  embeddable: E;
 }): EuiContextMenuPanelItemDescriptor {
   const menuPanelItem: EuiContextMenuPanelItemDescriptor = {
     name: action.displayName,
     icon: action.icon,
     panel: _.get(action, 'childContextMenuPanel.id'),
-    disabled: action.isDisabled({ embeddable, containerState }),
-    'data-test-subj': `dashboardPanelAction-${action.id}`,
+    disabled: action.isDisabled({ embeddable, container }),
+    'data-test-subj': `embeddablePanelAction-${action.id}`,
   };
 
   if (action.onClick) {
     menuPanelItem.onClick = () => {
       if (action.onClick) {
-        action.onClick({ embeddable, containerState });
+        action.onClick({ embeddable, container });
       }
     };
   }
 
   if (action.getHref) {
-    menuPanelItem.href = action.getHref({ embeddable, containerState });
+    menuPanelItem.href = action.getHref({ embeddable, container });
   }
 
   return menuPanelItem;
