@@ -30,6 +30,7 @@ import {
 } from '../embeddables';
 import { ViewMode } from '../types';
 import { IContainer } from './i_container';
+import { IEmbeddable } from '../embeddables/i_embeddable';
 
 export interface PanelState<E extends { [key: string]: unknown } = { [key: string]: unknown }> {
   savedObjectId?: string;
@@ -63,7 +64,7 @@ export abstract class Container<
 > extends Embeddable<I, O> implements IContainer<I, O> {
   public readonly isContainer: boolean = true;
   protected readonly children: {
-    [key: string]: Embeddable<any, any> | ErrorEmbeddable;
+    [key: string]: IEmbeddable<any, any> | ErrorEmbeddable;
   } = {};
   public readonly embeddableFactories: EmbeddableFactoryRegistry;
 
@@ -111,11 +112,11 @@ export abstract class Container<
   public async addNewEmbeddable<
     EEI extends EmbeddableInput = EmbeddableInput,
     EEO extends EmbeddableOutput = EmbeddableOutput,
-    E extends Embeddable<EEI, EEO> = Embeddable<EEI, EEO>
+    E extends IEmbeddable<EEI, EEO> = IEmbeddable<EEI, EEO>
   >(type: string, explicitInput: Partial<EEI>): Promise<E | ErrorEmbeddable> {
     const factory = this.embeddableFactories.getFactoryByName(type) as EmbeddableFactory<
       EEI,
-      any,
+      EEO,
       E
     >;
     const panelState = this.createNewPanelState<EEI>(factory, explicitInput);
@@ -135,11 +136,11 @@ export abstract class Container<
 
   public async addSavedObjectEmbeddable<
     EEI extends EmbeddableInput = EmbeddableInput,
-    E extends Embeddable<EEI> = Embeddable<EEI>
+    E extends IEmbeddable<EEI, EmbeddableOutput> = IEmbeddable<EEI, EmbeddableOutput>
   >(type: string, savedObjectId: string): Promise<E | ErrorEmbeddable> {
     const factory = this.embeddableFactories.getFactoryByName(type) as EmbeddableFactory<
       EEI,
-      any,
+      EmbeddableOutput,
       E
     >;
     const panelState = this.createNewPanelState<EEI>(factory);
@@ -308,7 +309,7 @@ export abstract class Container<
 
   private createNewExplicitEmbeddableInput<
     EEI extends EmbeddableInput = EmbeddableInput,
-    E extends Embeddable<EEI> = Embeddable<EEI>
+    E extends IEmbeddable<EEI, EmbeddableOutput> = IEmbeddable<EEI, EmbeddableOutput>
   >(id: string, factory: EmbeddableFactory<EEI, any, E>, partial: Partial<EEI> = {}) {
     const inheritedInput = this.getInheritedInput(id) as { [key: string]: unknown };
     const defaults = factory.getDefaultInputParameters() as { [key: string]: unknown };
@@ -342,7 +343,7 @@ export abstract class Container<
 
   private async onPanelAdded(panel: PanelState) {
     const factory = this.embeddableFactories.getFactoryByName(panel.type);
-    const embeddable = await factory.create<Embeddable>(
+    const embeddable: IEmbeddable<EmbeddableInput, EmbeddableOutput> = await factory.create(
       this.getInputForChild(panel.embeddableId),
       this
     );

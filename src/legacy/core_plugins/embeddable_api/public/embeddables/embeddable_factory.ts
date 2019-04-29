@@ -23,6 +23,7 @@ import { Embeddable, EmbeddableInput, EmbeddableOutput } from './embeddable';
 import { ErrorEmbeddable } from './error_embeddable';
 import { Container, ContainerOutput } from '../containers';
 import { ContainerInput } from '../containers/i_container';
+import { IEmbeddable } from './i_embeddable';
 
 export interface EmbeddableInstanceConfiguration {
   id: string;
@@ -49,7 +50,7 @@ export interface OutputSpec {
 export abstract class EmbeddableFactory<
   I extends EmbeddableInput = EmbeddableInput,
   O extends EmbeddableOutput = EmbeddableOutput,
-  E extends Embeddable<I, O> = Embeddable<I, O>,
+  E extends IEmbeddable<I, O> = IEmbeddable<I, O>,
   T extends SavedObjectAttributes = SavedObjectAttributes
 > {
   public readonly name: string;

@@ -103,7 +103,7 @@ export interface IContainer<
   addNewEmbeddable<
     EEI extends EmbeddableInput = EmbeddableInput,
     EEO extends EmbeddableOutput = EmbeddableOutput,
-    E extends Embeddable<EEI, EEO> = Embeddable<EEI, EEO>
+    E extends IEmbeddable<EEI, EEO> = IEmbeddable<EEI, EEO>
   >(
     type: string,
     explicitInput: Partial<EEI>
