@@ -1,0 +1,15 @@
+{
+  "author": "Elastic",
+  "name": "lens",
+  "version": "7.0.0",
+  "private": true,
+  "license": "Elastic-License",
+  "scripts": {
+  },
+  "devDependencies": {
+  },
+  "dependencies": {
+    "@types/d3": "^4.0.0",
+    "d3": "4.0.0"
+  }
+}

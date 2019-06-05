@@ -10,6 +10,8 @@ import { indexPatternDatasourceSetup, indexPatternDatasourceStop } from '../inde
 import { xyVisualizationSetup, xyVisualizationStop } from '../xy_visualization_plugin';
 import { App } from './app';
 import { EditorFrameInstance } from '../types';
+import { graphDatasourceSetup, graphDatasourceStop } from '../dummy_graphdata_plugin';
+import { graphVisualizationSetup, graphVisualizationStop } from '../graph_visualization_plugin';
 
 export class AppPlugin {
   private instance: EditorFrameInstance | null = null;
@@ -20,10 +22,14 @@ export class AppPlugin {
     // TODO: These plugins should not be called from the top level, but since this is the
     // entry point to the app we have no choice until the new platform is ready
     const indexPattern = indexPatternDatasourceSetup();
+    const graph = graphDatasourceSetup();
     const xyVisualization = xyVisualizationSetup();
     const editorFrame = editorFrameSetup();
+    const graphVisualization = graphVisualizationSetup();
 
+    editorFrame.registerDatasource('graph', graph);
     editorFrame.registerDatasource('indexpattern', indexPattern);
+    editorFrame.registerVisualization('graph', graphVisualization);
     editorFrame.registerVisualization('xy', xyVisualization);
 
     this.instance = editorFrame.createInstance({});
@@ -38,7 +44,9 @@ export class AppPlugin {
 
     // TODO this will be handled by the plugin platform itself
     indexPatternDatasourceStop();
+    graphDatasourceStop();
     xyVisualizationStop();
+    graphVisualizationStop();
     editorFrameStop();
   }
 }
