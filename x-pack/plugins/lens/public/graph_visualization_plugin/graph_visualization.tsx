@@ -7,6 +7,7 @@
 import React from 'react';
 import { render } from 'react-dom';
 import { Visualization } from '../types';
+import { NativeRenderer } from '../native_renderer';
 
 export type State = undefined;
 export type PersistableState = State;
@@ -26,7 +27,20 @@ export const graphVisualization: Visualization<State, PersistableState> = {
     render(
       <div>
         Graph Visualization
-        <p>No settings here yet</p>
+        <NativeRenderer
+          render={props.datasource.renderDimensionPanel}
+          nativeProps={{
+            columnId: 'filterPair',
+            filterOperations: () => true,
+          }}
+        />
+        <NativeRenderer
+          render={props.datasource.renderDimensionPanel}
+          nativeProps={{
+            columnId: 'value',
+            filterOperations: () => true,
+          }}
+        />
       </div>,
       domElement
     );

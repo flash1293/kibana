@@ -12,7 +12,10 @@ import { ExpressionFunction } from '../../../../../src/legacy/core_plugins/inter
 import { KibanaDatatable } from '../types';
 import { RenderFunction } from './plugin';
 
-export interface XYChartProps {
+const NODE_SCALE = 20;
+const LINK_SCALE = 20;
+
+export interface GraphChartProps {
   data: KibanaDatatable;
   args: {};
 }
@@ -20,7 +23,7 @@ export interface XYChartProps {
 export interface GraphRender {
   type: 'render';
   as: 'lens_graph_chart_renderer';
-  value: XYChartProps;
+  value: GraphChartProps;
 }
 
 export const graphChart: ExpressionFunction<
@@ -36,7 +39,7 @@ export const graphChart: ExpressionFunction<
   context: {
     types: ['kibana_datatable'],
   },
-  fn(data: KibanaDatatable, args: {}) {
+  fn(data, args) {
     return {
       type: 'render',
       as: 'lens_graph_chart_renderer',
@@ -49,13 +52,13 @@ export const graphChart: ExpressionFunction<
   // TODO the typings currently; don't support custom type args. As soon as they do, this can be removed
 };
 
-export const graphChartRenderer: RenderFunction<XYChartProps> = {
+export const graphChartRenderer: RenderFunction<GraphChartProps> = {
   name: 'lens_graph_chart_renderer',
   displayName: 'Graph Chart',
   help: 'Graph Chart Renderer',
   validate: () => {},
   reuseDomNode: true,
-  render: async (domNode: Element, config: XYChartProps, _handlers: unknown) => {
+  render: async (domNode: Element, config: GraphChartProps, _handlers: unknown) => {
     ReactDOM.render(<GraphChart {...config} />, domNode);
   },
 };
@@ -65,13 +68,14 @@ interface GraphRow {
   value: number;
 }
 
-export function GraphChart({ data, args }: XYChartProps) {
+export function GraphChart({ data, args }: GraphChartProps) {
   const elementRef = useRef<SVGSVGElement | null>(null);
   function renderD3(el: SVGSVGElement) {
-    debugger;
     const svg = d3.select(el),
       width = +svg.attr('width'),
       height = +svg.attr('height');
+
+    svg.selectAll('g').remove();
 
     const simulation = d3
       .forceSimulation()
@@ -81,16 +85,22 @@ export function GraphChart({ data, args }: XYChartProps) {
           return d.id;
         })
       )
-      .force('charge', d3.forceManyBody())
+      .force('charge', d3.forceManyBody().strength(-100 * LINK_SCALE))
       .force('center', d3.forceCenter(width / 2, height / 2));
 
-      const graphLinksAndNodes = (data.rows as GraphRow[]).map(({ filterPair: [source, target], value }) => ({
+    const graphLinksAndNodes = (data.rows as GraphRow[]).map(
+      ({ filterPair: [source, target], value }) => ({
         source,
         target,
         value,
-      }));
+      })
+    );
 
-      const nodeWeights = graphLinksAndNodes.reduce((weightMap, { source, target, value }) => source === target ? {...weightMap, [source]: value } : weightMap, {} as Record<string, number>);
+    const nodeWeights = graphLinksAndNodes.reduce(
+      (weightMap, { source, target, value }) =>
+        source === target ? { ...weightMap, [source]: value } : weightMap,
+      {} as Record<string, number>
+    );
 
     const graph = {
       nodes: _.uniq(
@@ -98,8 +108,16 @@ export function GraphChart({ data, args }: XYChartProps) {
           .map(({ filterPair }) => filterPair)
           .reduce((a, b) => [...a, ...b], [] as string[])
       ).map(id => ({ id, value: nodeWeights[id] })),
-      links: graphLinksAndNodes.filter(({ source, target }) => source !== target)
+      links: graphLinksAndNodes.filter(({ source, target }) => source !== target),
     };
+
+    const maxValue = Math.max.apply(undefined, data.rows.map(row => row.value as number));
+    const maxLinkValue = Math.max.apply(
+      undefined,
+      data.rows
+        .filter(row => (row.filterPair as string[])[0] !== (row.filterPair as string[])[1])
+        .map(row => row.value as number)
+    );
 
     const link = svg
       .append('g')
@@ -109,7 +127,7 @@ export function GraphChart({ data, args }: XYChartProps) {
       .enter()
       .append('line')
       .attr('stroke', 'red')
-      .attr('stroke-width', (d) => d.value);
+      .attr('stroke-width', d => (d.value / maxLinkValue) * LINK_SCALE);
 
     const node = svg
       .append('g')
@@ -117,9 +135,7 @@ export function GraphChart({ data, args }: XYChartProps) {
       .selectAll('circle')
       .data(graph.nodes)
       .enter()
-      .append('circle')
-      .attr('r', ({ value }) => value + 3)
-      .attr('title', (d) => d.id)
+      .append('g')
       .call(
         d3
           .drag()
@@ -128,13 +144,18 @@ export function GraphChart({ data, args }: XYChartProps) {
           .on('end', dragended)
       );
 
-    node.append('title').text(function(d) {
-      return d.id;
-    });
+    node
+      .append('circle')
+      .attr('r', ({ value }) => (value / maxValue) * NODE_SCALE + 3)
+      .attr('fill', 'gray');
+
+    node.append('text').text(({ id }) => id);
 
     simulation.nodes(graph.nodes).on('tick', ticked);
 
     simulation.force('link')!.links(graph.links);
+
+    console.log('data flushed');
 
     function ticked() {
       link
@@ -151,13 +172,9 @@ export function GraphChart({ data, args }: XYChartProps) {
           return d.target.y;
         });
 
-      node
-        .attr('cx', function(d) {
-          return d.x;
-        })
-        .attr('cy', function(d) {
-          return d.y;
-        });
+      node.attr('transform', function(d) {
+        return `translate(${d.x}, ${d.y})`;
+      });
     }
 
     function dragstarted(d) {
@@ -180,11 +197,13 @@ export function GraphChart({ data, args }: XYChartProps) {
 
   return (
     <svg
-      width={500}
-      height={500}
+      width={1000}
+      height={800}
       ref={el => {
-        elementRef.current = el;
-        renderD3(el!);
+        if (el) {
+          elementRef.current = el;
+          renderD3(el);
+        }
       }}
     />
   );

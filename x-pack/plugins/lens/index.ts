@@ -8,6 +8,7 @@ import * as Joi from 'joi';
 import { Server } from 'hapi';
 import { resolve } from 'path';
 import { LegacyPluginInitializer } from 'src/legacy/types';
+import { route as routeGraph } from './server/graph';
 
 import { PLUGIN_ID } from './common';
 
@@ -63,6 +64,8 @@ export const lens: LegacyPluginInitializer = kibana => {
           },
         },
       });
+
+      routeGraph(server);
     },
   });
 };

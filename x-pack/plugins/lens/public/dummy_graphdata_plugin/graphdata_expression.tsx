@@ -6,46 +6,54 @@
 
 import _ from 'lodash';
 import { ExpressionFunction } from 'src/legacy/core_plugins/interpreter/types';
+import { kfetch } from 'ui/kfetch';
+import { toElasticsearchQuery, fromKueryExpression } from '@kbn/es-query';
+import { StaticIndexPattern } from 'ui/index_patterns';
 import { KibanaDatatable } from '../types';
 
-export const graphData: ExpressionFunction<'lens_graph_data', never, {}, KibanaDatatable> = {
+export const graphData: ExpressionFunction<
+  'lens_graph_data',
+  never,
+  { filters: string; childAgg: string },
+  Promise<KibanaDatatable>
+> = {
   name: 'lens_graph_data',
   type: 'kibana_datatable',
   help: 'A graph datasource',
-  args: {},
+  args: {
+    filters: {
+      types: ['string'],
+      help: '',
+    },
+    childAgg: {
+      types: ['string'],
+      help: '',
+    },
+  },
   context: {
     types: [],
   },
-  fn(): KibanaDatatable {
+  async fn(_context, { filters, childAgg }): Promise<KibanaDatatable> {
+    const filterAggs = (JSON.parse(filters) as string[])
+      .map(filter => ({
+        [filter]: toElasticsearchQuery(
+          fromKueryExpression(filter),
+          (undefined as unknown) as StaticIndexPattern
+        ),
+      }))
+      .reduce((a, c) => ({ ...a, ...c }), {});
+
     return {
       type: 'kibana_datatable',
-      columns: [{ id: 'filterPair', name: 'filterPair' }, { id: 'value', name: 'value' }],
-      rows: [
-        {
-          filterPair: ['A', 'A'],
-          value: 2,
-        },
-        {
-          filterPair: ['B', 'B'],
-          value: 4,
-        },
-        {
-          filterPair: ['C', 'C'],
-          value: 1,
-        },
-        {
-          filterPair: ['A', 'B'],
-          value: 2,
-        },
-        {
-          filterPair: ['B', 'C'],
-          value: 3,
-        },
-        {
-          filterPair: ['C', 'A'],
-          value: 1,
-        },
-      ],
+      ...(await kfetch({
+        pathname: '/api/graph/query',
+        method: 'POST',
+        body: JSON.stringify({
+          index: 'kibana_sample_data_logs',
+          filters: filterAggs,
+          childAgg: JSON.parse(childAgg),
+        }),
+      })),
     };
   },
 };
