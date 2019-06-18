@@ -14,7 +14,7 @@ import { KibanaDatatable } from '../types';
 export const graphData: ExpressionFunction<
   'lens_graph_data',
   never,
-  { filters: string; childAgg: string },
+  { filters: string; childAggs: string; childAggNames: string },
   Promise<KibanaDatatable>
 > = {
   name: 'lens_graph_data',
@@ -25,7 +25,11 @@ export const graphData: ExpressionFunction<
       types: ['string'],
       help: '',
     },
-    childAgg: {
+    childAggs: {
+      types: ['string'],
+      help: '',
+    },
+    childAggNames: {
       types: ['string'],
       help: '',
     },
@@ -33,11 +37,12 @@ export const graphData: ExpressionFunction<
   context: {
     types: [],
   },
-  async fn(_context, { filters, childAgg }): Promise<KibanaDatatable> {
-    const filterAggs = (JSON.parse(filters) as string[])
+  async fn(_context, { filters, childAggs, childAggNames }): Promise<KibanaDatatable> {
+    const filterAggs = (JSON.parse(filters) as Array<{ query: string; label: string }>)
+      .filter(({ query }) => !!query)
       .map(filter => ({
-        [filter]: toElasticsearchQuery(
-          fromKueryExpression(filter),
+        [filter.label || filter.query]: toElasticsearchQuery(
+          fromKueryExpression(filter.query),
           (undefined as unknown) as StaticIndexPattern
         ),
       }))
@@ -51,7 +56,8 @@ export const graphData: ExpressionFunction<
         body: JSON.stringify({
           index: 'kibana_sample_data_logs',
           filters: filterAggs,
-          childAgg: JSON.parse(childAgg),
+          childAggs: JSON.parse(childAggs),
+          childAggNames: JSON.parse(childAggNames),
         }),
       })),
     };

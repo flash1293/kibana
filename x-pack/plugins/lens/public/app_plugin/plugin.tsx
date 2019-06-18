@@ -27,10 +27,10 @@ export class AppPlugin {
     const editorFrame = editorFrameSetup();
     const graphVisualization = graphVisualizationSetup();
 
-    editorFrame.registerDatasource('graph', graph);
     editorFrame.registerDatasource('indexpattern', indexPattern);
-    editorFrame.registerVisualization('graph', graphVisualization);
+    editorFrame.registerDatasource('graph', graph);
     editorFrame.registerVisualization('xy', xyVisualization);
+    editorFrame.registerVisualization('graph', graphVisualization);
 
     this.instance = editorFrame.createInstance({});
 

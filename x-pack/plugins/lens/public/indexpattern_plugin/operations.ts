@@ -22,6 +22,8 @@ import {
 import { dateHistogramOperation } from './operation_definitions/date_histogram';
 import { countOperation } from './operation_definitions/count';
 import { sortByField } from './state_helpers';
+import { filtersOperation } from './operation_definitions/filters';
+import { adjacencyOperation } from './operation_definitions/adjacency';
 
 type PossibleOperationDefinitions<
   U extends IndexPatternColumn = IndexPatternColumn
@@ -46,6 +48,8 @@ export const operationDefinitionMap: AllOperationDefinitions = {
   avg: averageOperation,
   sum: sumOperation,
   count: countOperation,
+  filters: filtersOperation,
+  adjacency: adjacencyOperation,
 };
 const operationDefinitions: PossibleOperationDefinitions[] = Object.values(operationDefinitionMap);
 

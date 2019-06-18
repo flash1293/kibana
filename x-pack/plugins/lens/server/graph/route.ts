@@ -32,20 +32,30 @@ export function route(server: Legacy.Server) {
               adjacency_matrix: {
                 filters: payload.filters,
               },
-              aggs: {
-                value: payload.childAgg
-              }
+              aggs: (payload.childAggs as object[])
+                .map((agg, index) => ({ [`value${index}`]: agg }))
+                .reduce((a, b) => ({ ...a, ...b }), {}),
             },
           },
         },
       });
 
       return {
-        columns: [{id: 'filterPair', name: 'filterPair'}, {id: 'value', name: 'value'}],
-        rows: result.aggregations.interactions.buckets.map(({ key, value: { value } }: { key: string, value: { value: number } }) => ({
-          filterPair: key.includes('&') ? key.split('&') : [key, key],
-          value
-        }))
+        columns: [
+          { id: 'filterPair', name: 'filterPair' },
+          ...(payload.childAggNames as string[]).map((aggName, index) => ({
+            id: `value${index}`,
+            name: aggName,
+          })),
+        ],
+        rows: result.aggregations.interactions.buckets.map(
+          (bucket: { key: string } & Record<string, { value: number }>) => ({
+            filterPair: bucket.key.includes('&') ? bucket.key.split('&') : [bucket.key, bucket.key],
+            ...(payload.childAggNames as string[])
+              .map((_, index) => ({ [`value${index}`]: bucket[`value${index}`].value }))
+              .reduce((a, b) => ({ ...a, ...b }), {}),
+          })
+        ),
       };
     },
   });

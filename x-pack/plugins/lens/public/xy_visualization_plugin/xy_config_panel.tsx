@@ -197,7 +197,9 @@ export function XYConfigPanel(props: VisualizationProps<State>) {
                 columnId: state.x.accessor,
                 dragDropContext: props.dragDropContext,
                 // TODO: Filter out invalid x-dimension operations
-                filterOperations: () => true,
+                filterOperations: (op: Operation) =>
+                  op.isBucketed &&
+                  (op.dataType === 'string' || op.dataType === 'number' || op.dataType === 'date'),
               }}
             />
           </EuiFormRow>

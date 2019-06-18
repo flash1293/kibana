@@ -6,10 +6,16 @@
 
 import { partition } from 'lodash';
 import { Position } from '@elastic/charts';
-import { SuggestionRequest, VisualizationSuggestion, TableColumn, TableSuggestion } from '../types';
+import {
+  SuggestionRequest,
+  VisualizationSuggestion,
+  TableColumn,
+  TableSuggestion,
+  DataType,
+} from '../types';
 import { State } from './types';
 
-const columnSortOrder = {
+const columnSortOrder: Partial<Record<DataType, number>> = {
   date: 0,
   string: 1,
   boolean: 2,
@@ -58,7 +64,8 @@ function getSuggestionForColumns(table: TableSuggestion): VisualizationSuggestio
 // order to pluck out the x column, and the split / stack column.
 function prioritizeColumns(columns: TableColumn[]) {
   return [...columns].sort(
-    (a, b) => columnSortOrder[a.operation.dataType] - columnSortOrder[b.operation.dataType]
+    (a, b) =>
+      (columnSortOrder[a.operation.dataType] || -1) - (columnSortOrder[b.operation.dataType] || -1)
   );
 }
 
@@ -74,7 +81,7 @@ function getSuggestion(
 
   // TODO: Localize the title, label, etc
   const preposition = isDate ? 'over' : 'of';
-  const title = `${yTitle} ${preposition} ${xTitle}`;
+  const title = `XY Chart ${yTitle} ${preposition} ${xTitle}`;
   return {
     title,
     score: 1,

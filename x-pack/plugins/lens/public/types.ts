@@ -100,7 +100,7 @@ export interface DatasourceDimensionPanelProps {
   suggestedPriority?: DimensionPriority;
 }
 
-export type DataType = 'string' | 'number' | 'date' | 'boolean';
+export type DataType = 'string' | 'number' | 'date' | 'boolean' | 'filterPair';
 
 // An operation represents a column in a table, not any information
 // about how the column was created such as whether it is a sum or average.

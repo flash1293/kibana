@@ -8,6 +8,16 @@ import * as d3 from 'd3';
 import React, { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
+import {
+  EuiIconTip,
+  EuiPopover,
+  EuiWrappingPopover,
+  EuiCode,
+  EuiDescriptionList,
+  EuiDescriptionListTitle,
+  EuiDescriptionListDescription,
+  EuiText,
+} from '@elastic/eui';
 import { ExpressionFunction } from '../../../../../src/legacy/core_plugins/interpreter/public';
 import { KibanaDatatable } from '../types';
 import { RenderFunction } from './plugin';
@@ -65,7 +75,8 @@ export const graphChartRenderer: RenderFunction<GraphChartProps> = {
 
 interface GraphRow {
   filterPair: [string, string];
-  value: number;
+  value0: number;
+  value1: number;
 }
 
 export function GraphChart({ data, args }: GraphChartProps) {
@@ -89,10 +100,11 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .force('center', d3.forceCenter(width / 2, height / 2));
 
     const graphLinksAndNodes = (data.rows as GraphRow[]).map(
-      ({ filterPair: [source, target], value }) => ({
+      ({ filterPair: [source, target], value0, value1 }) => ({
         source,
         target,
-        value,
+        value: value0,
+        tooltipValue: value1,
       })
     );
 
@@ -102,21 +114,27 @@ export function GraphChart({ data, args }: GraphChartProps) {
       {} as Record<string, number>
     );
 
+    const tooltipWeights = graphLinksAndNodes.reduce(
+      (weightMap, { source, target, tooltipValue }) =>
+        source === target ? { ...weightMap, [source]: tooltipValue } : weightMap,
+      {} as Record<string, number>
+    );
+
     const graph = {
       nodes: _.uniq(
         (data.rows as GraphRow[])
           .map(({ filterPair }) => filterPair)
           .reduce((a, b) => [...a, ...b], [] as string[])
-      ).map(id => ({ id, value: nodeWeights[id] })),
+      ).map(id => ({ id, value: nodeWeights[id], tooltipValue: tooltipWeights[id] })),
       links: graphLinksAndNodes.filter(({ source, target }) => source !== target),
     };
 
-    const maxValue = Math.max.apply(undefined, data.rows.map(row => row.value as number));
+    const maxValue = Math.max.apply(undefined, data.rows.map(row => row.value0 as number));
     const maxLinkValue = Math.max.apply(
       undefined,
       data.rows
         .filter(row => (row.filterPair as string[])[0] !== (row.filterPair as string[])[1])
-        .map(row => row.value as number)
+        .map(row => row.value0 as number)
     );
 
     const link = svg
@@ -128,6 +146,74 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .append('line')
       .attr('stroke', 'red')
       .attr('stroke-width', d => (d.value / maxLinkValue) * LINK_SCALE);
+
+    link.call(d => {
+      const d3Data = d.data();
+      const nodes = d.nodes();
+
+      nodes.forEach((node, index) => {
+        let mountpoint: HTMLElement;
+        let anchor: HTMLElement;
+        node.addEventListener('mouseover', () => {
+          mountpoint = document.createElement('div');
+          anchor = document.createElement('div');
+          document.body.appendChild(anchor);
+          anchor.appendChild(mountpoint);
+          anchor.style.position = 'absolute';
+          anchor.style.top = node.getBoundingClientRect().top + 'px';
+          anchor.style.left = node.getBoundingClientRect().left + 'px';
+
+          ReactDOM.render(
+            <>
+              <EuiWrappingPopover
+                id={d3Data[index].target + '' + d3Data[index].source.id}
+                button={mountpoint}
+                isOpen={true}
+                closePopover={() => {
+                  ReactDOM.unmountComponentAtNode(mountpoint);
+                  document
+                    .querySelectorAll('[data-focus-lock-disabled="disabled"]')
+                    .forEach(el => el.remove());
+                  anchor.remove();
+                }}
+                anchorPosition="upCenter"
+              >
+                <EuiText grow={false}>
+                  <h2>
+                    Intersection of <EuiCode>{d3Data[index].source.id}</EuiCode> and{' '}
+                    <EuiCode>{d3Data[index].target.id}</EuiCode>
+                  </h2>
+                </EuiText>
+                <EuiDescriptionList>
+                  <EuiDescriptionListTitle>{data.columns[1].name}</EuiDescriptionListTitle>
+                  <EuiDescriptionListDescription>
+                    {d3Data[index].value}
+                  </EuiDescriptionListDescription>
+                  {data.columns[2] && (
+                    <>
+                      <EuiDescriptionListTitle>{data.columns[2].name}</EuiDescriptionListTitle>
+                      <EuiDescriptionListDescription>
+                        {d3Data[index].tooltipValue}
+                      </EuiDescriptionListDescription>
+                    </>
+                  )}
+                </EuiDescriptionList>
+              </EuiWrappingPopover>
+            </>,
+            mountpoint
+          );
+        });
+        node.addEventListener('mouseout', () => {
+          if (mountpoint) {
+            ReactDOM.unmountComponentAtNode(mountpoint);
+            document
+              .querySelectorAll('[data-focus-lock-disabled="disabled"]')
+              .forEach(el => el.remove());
+            anchor.remove();
+          }
+        });
+      });
+    });
 
     const node = svg
       .append('g')
@@ -147,7 +233,73 @@ export function GraphChart({ data, args }: GraphChartProps) {
     node
       .append('circle')
       .attr('r', ({ value }) => (value / maxValue) * NODE_SCALE + 3)
-      .attr('fill', 'gray');
+      .attr('fill', 'gray')
+      .call(d => {
+        const d3Data = d.data();
+        const nodes = d.nodes();
+
+        nodes.forEach((node, index) => {
+          let mountpoint: HTMLElement;
+          let anchor: HTMLElement;
+          node.addEventListener('mouseover', () => {
+            mountpoint = document.createElement('div');
+            anchor = document.createElement('div');
+            document.body.appendChild(anchor);
+            anchor.appendChild(mountpoint);
+            anchor.style.position = 'absolute';
+            anchor.style.top = node.getBoundingClientRect().top + 'px';
+            anchor.style.left = node.getBoundingClientRect().left + 'px';
+
+            ReactDOM.render(
+              <>
+                <EuiWrappingPopover
+                  id={d3Data[index].id}
+                  button={mountpoint}
+                  isOpen={true}
+                  closePopover={() => {
+                    ReactDOM.unmountComponentAtNode(mountpoint);
+                    document
+                      .querySelectorAll('[data-focus-lock-disabled="disabled"]')
+                      .forEach(el => el.remove());
+                    anchor.remove();
+                  }}
+                  anchorPosition="upCenter"
+                >
+                  <EuiText grow={false}>
+                    <h2>
+                      Node <EuiCode>{d3Data[index].id}</EuiCode>
+                    </h2>
+                  </EuiText>
+                  <EuiDescriptionList>
+                    <EuiDescriptionListTitle>{data.columns[1].name}</EuiDescriptionListTitle>
+                    <EuiDescriptionListDescription>
+                      {d3Data[index].value}
+                    </EuiDescriptionListDescription>
+                    {data.columns[2] && (
+                      <>
+                        <EuiDescriptionListTitle>{data.columns[2].name}</EuiDescriptionListTitle>
+                        <EuiDescriptionListDescription>
+                          {d3Data[index].tooltipValue}
+                        </EuiDescriptionListDescription>
+                      </>
+                    )}
+                  </EuiDescriptionList>
+                </EuiWrappingPopover>
+              </>,
+              mountpoint
+            );
+          });
+          node.addEventListener('mouseout', () => {
+            if (mountpoint) {
+              ReactDOM.unmountComponentAtNode(mountpoint);
+              document
+                .querySelectorAll('[data-focus-lock-disabled="disabled"]')
+                .forEach(el => el.remove());
+              anchor.remove();
+            }
+          });
+        });
+      });
 
     node.append('text').text(({ id }) => id);
 

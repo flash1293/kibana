@@ -6,8 +6,30 @@
 
 import _ from 'lodash';
 
-import { IndexPatternPrivateState, IndexPatternColumn } from './indexpattern';
+import {
+  IndexPatternPrivateState,
+  IndexPatternColumn,
+  AdjacencyIndexPatternColumn,
+} from './indexpattern';
 import { operationDefinitionMap, OperationDefinition } from './operations';
+
+function getAggForColumn(col: IndexPatternColumn) {
+  switch (col.operationType) {
+    case 'count':
+      return { value_count: { field: '_id' } };
+    case 'avg':
+    case 'sum':
+    case 'min':
+    case 'max':
+      return {
+        [col.operationType]: {
+          field: col.sourceField,
+        },
+      };
+    default:
+      throw new Error('that wont work');
+  }
+}
 
 export function toExpression(state: IndexPatternPrivateState) {
   if (state.columnOrder.length === 0) {
@@ -26,23 +48,32 @@ export function toExpression(state: IndexPatternPrivateState) {
   }
 
   if (sortedColumns.length) {
-    const aggs = sortedColumns.map((col, index) => {
-      return getEsAggsConfig(col, state.columnOrder[index]);
-    });
+    const hasAdjacencyOperation = sortedColumns.some(col => col.operationType === 'adjacency');
+    if (hasAdjacencyOperation) {
+      const [firstColumn, ...otherColumns] = sortedColumns;
+      const childAgg = otherColumns.map(col => getAggForColumn(col));
+      return `lens_graph_data filters='${JSON.stringify(
+        (firstColumn as AdjacencyIndexPatternColumn).params.filters
+      )}' childAggs='${JSON.stringify(childAgg)}' childAggNames='${JSON.stringify(otherColumns.map(col => col.label))}'`;
+    } else {
+      const aggs = sortedColumns.map((col, index) => {
+        return getEsAggsConfig(col, state.columnOrder[index]);
+      });
 
-    const idMap = state.columnOrder.reduce(
-      (currentIdMap, columnId, index) => ({
-        ...currentIdMap,
-        [`col-${index}-${columnId}`]: columnId,
-      }),
-      {} as Record<string, string>
-    );
+      const idMap = state.columnOrder.reduce(
+        (currentIdMap, columnId, index) => ({
+          ...currentIdMap,
+          [`col-${index}-${columnId}`]: columnId,
+        }),
+        {} as Record<string, string>
+      );
 
-    return `esaggs
+      return `esaggs
       index="${state.currentIndexPatternId}"
       metricsAtAllLevels="false"
       partialRows="false"
       aggConfigs='${JSON.stringify(aggs)}' | lens_rename_columns idMap='${JSON.stringify(idMap)}'`;
+    }
   }
 
   return null;
