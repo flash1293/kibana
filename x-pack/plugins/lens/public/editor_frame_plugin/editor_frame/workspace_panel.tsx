@@ -37,9 +37,10 @@ export function WorkspacePanel({
   dispatch,
   ExpressionRenderer: ExpressionRendererComponent,
 }: WorkspacePanelProps) {
-  function onDrop() {
+  function onDrop(item: unknown) {
     const datasourceSuggestions = activeDatasource.getDatasourceSuggestionsForField(
-      datasourceState
+      datasourceState,
+      item
     );
 
     const suggestions = getSuggestions(
@@ -137,7 +138,7 @@ export function WorkspacePanel({
       return (
         <ExpressionRendererComponent
           expression={expression!}
-          onRenderFailure={e => {
+          onRenderFailure={(e: unknown) => {
             setExpressionError(e);
           }}
         />
