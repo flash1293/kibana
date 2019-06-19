@@ -414,7 +414,7 @@ export function getIndexPatternDatasource(chrome: Chrome, toastNotifications: To
                     operation: columnToOperation(adjacencyColumn),
                   },
                   {
-                    columnId: 'value',
+                    columnId: 'value0',
                     operation: columnToOperation(secondColumn),
                   },
                 ],

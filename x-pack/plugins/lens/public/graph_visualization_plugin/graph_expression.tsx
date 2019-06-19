@@ -9,8 +9,6 @@ import React, { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
 import {
-  EuiIconTip,
-  EuiPopover,
   EuiWrappingPopover,
   EuiCode,
   EuiDescriptionList,
@@ -27,7 +25,7 @@ const LINK_SCALE = 20;
 
 export interface GraphChartProps {
   data: KibanaDatatable;
-  args: {};
+  args: { colorMap: string; linkColor: string };
 }
 
 export interface GraphRender {
@@ -39,13 +37,22 @@ export interface GraphRender {
 export const graphChart: ExpressionFunction<
   'lens_graph_chart',
   KibanaDatatable,
-  {},
+  { colorMap: string; linkColor: string },
   GraphRender
 > = {
   name: 'lens_graph_chart',
   type: 'render',
   help: 'A graph chart',
-  args: {},
+  args: {
+    colorMap: {
+      types: ['string'],
+      help: '',
+    },
+    linkColor: {
+      types: ['string'],
+      help: '',
+    },
+  },
   context: {
     types: ['kibana_datatable'],
   },
@@ -81,6 +88,7 @@ interface GraphRow {
 
 export function GraphChart({ data, args }: GraphChartProps) {
   const elementRef = useRef<SVGSVGElement | null>(null);
+  const colorMap = JSON.parse(args.colorMap);
   function renderD3(el: SVGSVGElement) {
     const svg = d3.select(el),
       width = +svg.attr('width'),
@@ -144,7 +152,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .data(graph.links)
       .enter()
       .append('line')
-      .attr('stroke', 'red')
+      .attr('stroke', args.linkColor)
       .attr('stroke-width', d => (d.value / maxLinkValue) * LINK_SCALE);
 
     link.call(d => {
@@ -154,14 +162,14 @@ export function GraphChart({ data, args }: GraphChartProps) {
       nodes.forEach((node, index) => {
         let mountpoint: HTMLElement;
         let anchor: HTMLElement;
-        node.addEventListener('mouseover', () => {
+        node.addEventListener('mouseover', e => {
           mountpoint = document.createElement('div');
           anchor = document.createElement('div');
           document.body.appendChild(anchor);
           anchor.appendChild(mountpoint);
           anchor.style.position = 'absolute';
-          anchor.style.top = node.getBoundingClientRect().top + 'px';
-          anchor.style.left = node.getBoundingClientRect().left + 'px';
+          anchor.style.top = e.clientY - 30 + 'px';
+          anchor.style.left = e.clientX + 'px';
 
           ReactDOM.render(
             <>
@@ -222,6 +230,11 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .data(graph.nodes)
       .enter()
       .append('g')
+      .on('dblclick', d => {
+        if (!d3.event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      })
       .call(
         d3
           .drag()
@@ -233,7 +246,12 @@ export function GraphChart({ data, args }: GraphChartProps) {
     node
       .append('circle')
       .attr('r', ({ value }) => (value / maxValue) * NODE_SCALE + 3)
-      .attr('fill', 'gray')
+      .attr('fill', d => {
+        const mappedColor = Object.entries(colorMap).find(([prefix, color]) =>
+          d.id.startsWith(prefix)
+        );
+        return mappedColor ? mappedColor[1] : 'gray';
+      })
       .call(d => {
         const d3Data = d.data();
         const nodes = d.nodes();
@@ -247,8 +265,10 @@ export function GraphChart({ data, args }: GraphChartProps) {
             document.body.appendChild(anchor);
             anchor.appendChild(mountpoint);
             anchor.style.position = 'absolute';
-            anchor.style.top = node.getBoundingClientRect().top + 'px';
-            anchor.style.left = node.getBoundingClientRect().left + 'px';
+            anchor.style.top =
+              node.getBoundingClientRect().top - node.getBoundingClientRect().height / 2 + 'px';
+            anchor.style.left =
+              node.getBoundingClientRect().left + node.getBoundingClientRect().width / 2 + 'px';
 
             ReactDOM.render(
               <>
@@ -301,7 +321,26 @@ export function GraphChart({ data, args }: GraphChartProps) {
         });
       });
 
-    node.append('text').text(({ id }) => id);
+    node
+      .append('foreignObject')
+      .attr('width', 100)
+      .attr('height', 20)
+      .attr('transform', d => `translate(-50,${(d.value / maxValue) * NODE_SCALE + 3})`)
+      .attr('style', 'pointer-events: none')
+      .append('xhtml:div')
+      .attr(
+        'style',
+        `
+    max-width: 100%;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    text-align: center;
+    font-size: 12px;
+    `
+      )
+      .text(({ id }) => id);
 
     simulation.nodes(graph.nodes).on('tick', ticked);
 
@@ -330,6 +369,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
     }
 
     function dragstarted(d) {
+      d3.select(this).classed('fixed', (d.fixed = true));
       if (!d3.event.active) simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
@@ -342,8 +382,8 @@ export function GraphChart({ data, args }: GraphChartProps) {
 
     function dragended(d) {
       if (!d3.event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
+      // d.fx = null;
+      // d.fy = null;
     }
   }
 
