@@ -22,6 +22,7 @@ import { RenderFunction } from './plugin';
 
 const NODE_SCALE = 20;
 const LINK_SCALE = 20;
+const scaleFactor = 1.2;
 
 export interface GraphChartProps {
   data: KibanaDatatable;
@@ -115,6 +116,12 @@ export function GraphChart({ data, args }: GraphChartProps) {
         tooltipValue: value1,
       })
     );
+
+    const valueline = d3.line()
+    .x(function(d) { return d[0]; })
+    .y(function(d) { return d[1]; })
+    .curve(d3.curveCatmullRomClosed);
+ 
 
     const nodeWeights = graphLinksAndNodes.reduce(
       (weightMap, { source, target, value }) =>
@@ -342,6 +349,82 @@ export function GraphChart({ data, args }: GraphChartProps) {
       )
       .text(({ id }) => id);
 
+    const groupIds = d3
+      .set(
+        graph.nodes.map(function({ id }) {
+          const matchingPrefix = Object.keys(colorMap).find(prefix => id.startsWith(prefix));
+          return matchingPrefix || '';
+        })
+      )
+      .values()
+      .map(function(groupId) {
+        return {
+          groupId,
+          count: graph.nodes.filter(function({ id }) {
+            const matchingPrefix = Object.keys(colorMap).find(prefix => id.startsWith(prefix));
+            return matchingPrefix && matchingPrefix == groupId;
+          }).length,
+        };
+      })
+      .filter(function(group) {
+        return group.count > 2;
+      })
+      .map(function(group) {
+        return group.groupId;
+      });
+
+    const paths = svg
+      .append('g')
+      .selectAll('.path_placeholder')
+      .data(groupIds, function(d) {
+        return d;
+      })
+      .enter()
+      .append('g')
+      .attr('class', 'path_placeholder')
+      .append('path')
+      .attr('stroke', function(d) {
+        return 'bloack';
+      })
+      .attr('fill', function(d) {
+        return colorMap[d];
+      });
+
+      var polygonGenerator = function(groupId: string) {
+        var node_coords = node
+          .filter(function(d) { return d.id.startsWith(groupId); })
+          .data()
+          .map(function(d) { return [d.x, d.y]; });
+          
+        return d3.polygonHull(node_coords);
+      };
+      
+      
+      
+      function updateGroups() {
+        groupIds.forEach(function(groupId) {
+          var path = paths.filter(function(d) { return d == groupId;})
+            .attr('transform', 'scale(1) translate(0,0)')
+            .attr('d', function(d) {
+              const polygon = polygonGenerator(d);          
+              const centroid = d3.polygonCentroid(polygon);
+      
+              // to scale the shape properly around its points:
+              // move the 'g' element to the centroid point, translate
+              // all the path around the center of the 'g' and then
+              // we can scale the 'g' element properly
+              return valueline(
+                polygon.map(function(point) {
+                  return [  point[0] - centroid[0], point[1] - centroid[1] ];
+                })
+              );
+            });
+      
+          d3.select(path.node().parentNode).attr('transform', 'translate('  + centroid[0] + ',' + (centroid[1]) + ') scale(' + scaleFactor + ')');
+        });
+      }
+      
+
     simulation.nodes(graph.nodes).on('tick', ticked);
 
     simulation.force('link')!.links(graph.links);
@@ -366,6 +449,9 @@ export function GraphChart({ data, args }: GraphChartProps) {
       node.attr('transform', function(d) {
         return `translate(${d.x}, ${d.y})`;
       });
+
+      updateGroups();
+
     }
 
     function dragstarted(d) {
