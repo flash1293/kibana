@@ -26,7 +26,7 @@ const scaleFactor = 1.2;
 
 export interface GraphChartProps {
   data: KibanaDatatable;
-  args: { colorMap: string; linkColor: string };
+  args: { colorMap: string; linkColor: string; groupMap: string };
 }
 
 export interface GraphRender {
@@ -38,7 +38,7 @@ export interface GraphRender {
 export const graphChart: ExpressionFunction<
   'lens_graph_chart',
   KibanaDatatable,
-  { colorMap: string; linkColor: string },
+  { colorMap: string; linkColor: string; groupMap: string },
   GraphRender
 > = {
   name: 'lens_graph_chart',
@@ -46,6 +46,10 @@ export const graphChart: ExpressionFunction<
   help: 'A graph chart',
   args: {
     colorMap: {
+      types: ['string'],
+      help: '',
+    },
+    groupMap: {
       types: ['string'],
       help: '',
     },
@@ -90,6 +94,7 @@ interface GraphRow {
 export function GraphChart({ data, args }: GraphChartProps) {
   const elementRef = useRef<SVGSVGElement | null>(null);
   const colorMap = JSON.parse(args.colorMap);
+  const groupMap = JSON.parse(args.groupMap);
   function renderD3(el: SVGSVGElement) {
     const svg = d3.select(el),
       width = +svg.attr('width'),
@@ -151,6 +156,85 @@ export function GraphChart({ data, args }: GraphChartProps) {
         .filter(row => (row.filterPair as string[])[0] !== (row.filterPair as string[])[1])
         .map(row => row.value0 as number)
     );
+
+    const groupIds = d3
+      .set(
+        graph.nodes.map(function({ id }) {
+          const matchingPrefix = Object.keys(colorMap).find(prefix => id.startsWith(prefix));
+          if (matchingPrefix && groupMap[matchingPrefix]) {
+            return matchingPrefix;
+          }
+          return '';
+        })
+      )
+      .values()
+      .map(function(groupId) {
+        return {
+          groupId,
+          count: graph.nodes.filter(function({ id }) {
+            const matchingPrefix = Object.keys(colorMap).find(prefix => id.startsWith(prefix));
+            return matchingPrefix && matchingPrefix == groupId;
+          }).length,
+        };
+      })
+      .filter(function(group) {
+        return group.count > 2;
+      })
+      .map(function(group) {
+        return group.groupId;
+      });
+
+    const paths = svg
+      .append('g')
+      .selectAll('.path_placeholder')
+      .data(groupIds, function(d) {
+        return d;
+      })
+      .enter()
+      .append('g')
+      .attr('class', 'path_placeholder')
+      .append('path')
+      .attr('stroke', function(d) {
+        return 'bloack';
+      })
+      .attr('fill', function(d) {
+        return colorMap[d];
+      }).attr('style', 'opacity: 0.3');
+
+      var polygonGenerator = function(groupId: string) {
+        var node_coords = node
+          .filter(function(d) { return d.id.startsWith(groupId); })
+          .data()
+          .map(function(d) { return [d.x, d.y]; });
+          
+        return d3.polygonHull(node_coords);
+      };
+      
+      
+      
+      function updateGroups() {
+        groupIds.forEach(function(groupId) {
+          let centroid;
+          var path = paths.filter(function(d) { return d == groupId;})
+            .attr('transform', 'scale(1) translate(0,0)')
+            .attr('d', function(d) {
+              const polygon = polygonGenerator(d);          
+              centroid = d3.polygonCentroid(polygon);
+      
+              // to scale the shape properly around its points:
+              // move the 'g' element to the centroid point, translate
+              // all the path around the center of the 'g' and then
+              // we can scale the 'g' element properly
+              return valueline(
+                polygon.map(function(point) {
+                  return [  point[0] - centroid[0], point[1] - centroid[1] ];
+                })
+              );
+            });
+      
+          d3.select(path.node().parentNode).attr('transform', 'translate('  + centroid[0] + ',' + (centroid[1]) + ') scale(' + scaleFactor + ')');
+        });
+      }
 
     const link = svg
       .append('g')
@@ -254,10 +338,12 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .append('circle')
       .attr('r', ({ value }) => (value / maxValue) * NODE_SCALE + 3)
       .attr('fill', d => {
-        const mappedColor = Object.entries(colorMap).find(([prefix, color]) =>
-          d.id.startsWith(prefix)
-        );
-        return mappedColor ? mappedColor[1] : 'gray';
+        const mappedPrefix = Object.keys(colorMap).find(prefix => d.id.startsWith(prefix));
+        const isGroupColor = mappedPrefix && groupMap[mappedPrefix]
+        if (mappedPrefix && !isGroupColor) {
+          return colorMap[mappedPrefix];
+        }
+        return 'gray';
       })
       .call(d => {
         const d3Data = d.data();
@@ -348,81 +434,6 @@ export function GraphChart({ data, args }: GraphChartProps) {
     `
       )
       .text(({ id }) => id);
-
-    const groupIds = d3
-      .set(
-        graph.nodes.map(function({ id }) {
-          const matchingPrefix = Object.keys(colorMap).find(prefix => id.startsWith(prefix));
-          return matchingPrefix || '';
-        })
-      )
-      .values()
-      .map(function(groupId) {
-        return {
-          groupId,
-          count: graph.nodes.filter(function({ id }) {
-            const matchingPrefix = Object.keys(colorMap).find(prefix => id.startsWith(prefix));
-            return matchingPrefix && matchingPrefix == groupId;
-          }).length,
-        };
-      })
-      .filter(function(group) {
-        return group.count > 2;
-      })
-      .map(function(group) {
-        return group.groupId;
-      });
-
-    const paths = svg
-      .append('g')
-      .selectAll('.path_placeholder')
-      .data(groupIds, function(d) {
-        return d;
-      })
-      .enter()
-      .append('g')
-      .attr('class', 'path_placeholder')
-      .append('path')
-      .attr('stroke', function(d) {
-        return 'bloack';
-      })
-      .attr('fill', function(d) {
-        return colorMap[d];
-      });
-
-      var polygonGenerator = function(groupId: string) {
-        var node_coords = node
-          .filter(function(d) { return d.id.startsWith(groupId); })
-          .data()
-          .map(function(d) { return [d.x, d.y]; });
-          
-        return d3.polygonHull(node_coords);
-      };
-      
-      
-      
-      function updateGroups() {
-        groupIds.forEach(function(groupId) {
-          var path = paths.filter(function(d) { return d == groupId;})
-            .attr('transform', 'scale(1) translate(0,0)')
-            .attr('d', function(d) {
-              const polygon = polygonGenerator(d);          
-              const centroid = d3.polygonCentroid(polygon);
-      
-              // to scale the shape properly around its points:
-              // move the 'g' element to the centroid point, translate
-              // all the path around the center of the 'g' and then
-              // we can scale the 'g' element properly
-              return valueline(
-                polygon.map(function(point) {
-                  return [  point[0] - centroid[0], point[1] - centroid[1] ];
-                })
-              );
-            });
-      
-          d3.select(path.node().parentNode).attr('transform', 'translate('  + centroid[0] + ',' + (centroid[1]) + ') scale(' + scaleFactor + ')');
-        });
-      }
       
 
     simulation.nodes(graph.nodes).on('tick', ticked);

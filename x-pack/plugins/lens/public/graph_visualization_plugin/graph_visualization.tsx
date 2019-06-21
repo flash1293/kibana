@@ -13,11 +13,16 @@ import {
   EuiFieldText,
   EuiButton,
   EuiColorPicker,
+  EuiCheckbox,
 } from '@elastic/eui';
 import { Visualization, VisualizationSuggestion, Operation } from '../types';
 import { NativeRenderer } from '../native_renderer';
 
-export type State = { colorMap: Record<string, string>; linkColor: string };
+export type State = {
+  colorMap: Record<string, string>;
+  linkColor: string;
+  groupMap: Record<string, boolean>;
+};
 export type PersistableState = State;
 
 export const graphVisualization: Visualization<State, PersistableState> = {
@@ -33,14 +38,14 @@ export const graphVisualization: Visualization<State, PersistableState> = {
           datasourceSuggestionId: table.datasourceSuggestionId,
           score: 0.5,
           title: 'Correlations between filters as graph',
-          state: { colorMap: {}, linkColor: '#69707D' },
+          state: { colorMap: {}, linkColor: '#69707D', groupMap: {} },
         });
       }
     });
     return suggestions;
   },
   initialize(api, state) {
-    return { colorMap: {}, linkColor: '#69707D' };
+    return { colorMap: {}, linkColor: '#69707D', groupMap: {} };
   },
 
   getPersistableState(state) {
@@ -83,37 +88,62 @@ export const graphVisualization: Visualization<State, PersistableState> = {
         </EuiFormRow>
         {Object.entries(props.state.colorMap).map(([field, color]) => {
           return (
-            <EuiFlexGroup key={color}>
+            <EuiFlexGroup direction="column" key={color}>
               <EuiFlexItem>
-                <EuiFormRow label={`Prefix`}>
-                  <EuiFieldText
-                    value={field}
+                <EuiFlexGroup>
+                  <EuiFlexItem>
+                    <EuiFormRow label={`Prefix`}>
+                      <EuiFieldText
+                        value={field}
+                        onChange={e => {
+                          props.setState({
+                            ...props.state,
+                            colorMap: Object.entries(props.state.colorMap)
+                              .filter(([key, _]) => key !== field)
+                              .concat([[e.target.value, props.state.colorMap[field]]])
+                              .map(([key, val]) => ({ [key]: val }))
+                              .reduce((a, b) => ({ ...a, ...b }), {}),
+                            groupMap: {
+                              ...props.state.groupMap,
+                              [e.target.value]: props.state.groupMap[field],
+                            },
+                          });
+                        }}
+                      />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiFormRow label={`Color`}>
+                      <EuiColorPicker
+                        onChange={value => {
+                          props.setState({
+                            ...props.state,
+                            colorMap: {
+                              ...props.state.colorMap,
+                              [field]: value,
+                            },
+                          });
+                        }}
+                        color={color}
+                      />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiFormRow label={`Show as group`}>
+                  <EuiCheckbox
+                    id={`group-${field}`}
+                    checked={props.state.groupMap[field]}
                     onChange={e => {
                       props.setState({
                         ...props.state,
-                        colorMap: Object.entries(props.state.colorMap)
-                          .filter(([key, _]) => key !== field)
-                          .concat([[e.target.value, props.state.colorMap[field]]])
-                          .map(([key, val]) => ({ [key]: val }))
-                          .reduce((a, b) => ({ ...a, ...b }), {}),
-                      });
-                    }}
-                  />
-                </EuiFormRow>
-              </EuiFlexItem>
-              <EuiFlexItem>
-                <EuiFormRow label={`Color`}>
-                  <EuiColorPicker
-                    onChange={value => {
-                      props.setState({
-                        ...props.state,
-                        colorMap: {
-                          ...props.state.colorMap,
-                          [field]: value,
+                        groupMap: {
+                          ...props.state.groupMap,
+                          [field]: !props.state.groupMap[field],
                         },
                       });
                     }}
-                    color={color}
                   />
                 </EuiFormRow>
               </EuiFlexItem>
@@ -153,5 +183,6 @@ export const graphVisualization: Visualization<State, PersistableState> = {
     );
   },
 
-  toExpression: state => `lens_graph_chart colorMap='${JSON.stringify(state.colorMap)}' linkColor='${state.linkColor}'`,
+  toExpression: state =>
+    `lens_graph_chart colorMap='${JSON.stringify(state.colorMap)}' groupMap='${JSON.stringify(state.groupMap)}' linkColor='${state.linkColor}'`,
 };
