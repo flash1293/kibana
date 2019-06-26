@@ -273,6 +273,7 @@ export function getIndexPatternDatasource(chrome: Chrome, toastNotifications: To
           return state.columnOrder.map(colId => ({ columnId: colId }));
         },
         getOperationForColumnId: (columnId: string) => {
+          if (!state.columns[columnId]) return null;
           return columnToOperation(state.columns[columnId]);
         },
         generateColumnId: () => {
