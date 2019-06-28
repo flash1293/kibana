@@ -168,6 +168,7 @@ export const datatableVisualization: Visualization<
         title,
         score: 1,
         datasourceSuggestionId: table.datasourceSuggestionId,
+        previewIcon: 'graphApp',
         state: {
           columns: table.columns.map(col => ({
             id: col.columnId,

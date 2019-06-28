@@ -39,6 +39,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
           score: 0.5,
           title: 'Correlations between filters as graph',
           state: { colorMap: {}, linkColor: '#69707D', groupMap: {} },
+          previewIcon: 'graphApp'
         });
       }
     });

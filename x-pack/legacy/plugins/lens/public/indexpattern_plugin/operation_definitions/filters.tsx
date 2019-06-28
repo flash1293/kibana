@@ -61,7 +61,7 @@ export const filtersOperation: OperationDefinition<FiltersIndexPatternColumn> = 
         })),
     },
   }),
-  inlineOptions: ({ state, setState, columnId: currentColumnId }) => {
+  paramEditor: ({ state, setState, columnId: currentColumnId }) => {
     const currentColumn = state.columns[currentColumnId] as FiltersIndexPatternColumn;
     return (
       <>
