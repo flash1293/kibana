@@ -26,7 +26,7 @@ const scaleFactor = 1.2;
 
 export interface GraphChartProps {
   data: KibanaDatatable;
-  args: { colorMap: string; linkColor: string; groupMap: string };
+  args: { colorMap: string; linkColor: string; groupMap: string, annotations: string };
 }
 
 export interface GraphRender {
@@ -51,6 +51,11 @@ export const graphChart: ExpressionFunction<
     },
     groupMap: {
       types: ['string'],
+      help: '',
+    },
+    annotations: {
+      types: ['string'],
+      default: '{}',
       help: '',
     },
     linkColor: {
@@ -95,6 +100,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
   const elementRef = useRef<SVGSVGElement | null>(null);
   const colorMap = JSON.parse(args.colorMap);
   const groupMap = JSON.parse(args.groupMap);
+  const annotations = JSON.parse(args.annotations)
   function renderD3(el: SVGSVGElement) {
     const svg = d3.select(el),
       width = +svg.attr('width'),
@@ -345,6 +351,15 @@ export function GraphChart({ data, args }: GraphChartProps) {
         }
         return 'gray';
       })
+      .attr('stroke-width', '4px')
+      .attr('stroke', d => {
+        const mappedPrefix = Object.keys(annotations).find(prefix => d.id.startsWith(prefix));
+        if (mappedPrefix) {
+          return 'yellow';
+        } else {
+          return 'gray';
+        }
+      })
       .call(d => {
         const d3Data = d.data();
         const nodes = d.nodes();
@@ -352,6 +367,9 @@ export function GraphChart({ data, args }: GraphChartProps) {
         nodes.forEach((node, index) => {
           let mountpoint: HTMLElement;
           let anchor: HTMLElement;
+          const mappedPrefix = Object.keys(annotations).find(prefix => d3Data[index].id.startsWith(prefix));
+          const annotation = mappedPrefix && annotations[mappedPrefix];
+
           node.addEventListener('mouseover', () => {
             mountpoint = document.createElement('div');
             anchor = document.createElement('div');
@@ -396,6 +414,12 @@ export function GraphChart({ data, args }: GraphChartProps) {
                         </EuiDescriptionListDescription>
                       </>
                     )}
+                    {annotation && <>
+                        <EuiDescriptionListTitle>Annotation</EuiDescriptionListTitle>
+                        <EuiDescriptionListDescription>
+                          {annotation}
+                        </EuiDescriptionListDescription>
+                      </>}
                   </EuiDescriptionList>
                 </EuiWrappingPopover>
               </>,

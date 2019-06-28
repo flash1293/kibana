@@ -22,6 +22,7 @@ export type State = {
   colorMap: Array<[string, string]>;
   linkColor: string;
   groupMap: Array<[string, boolean]>;
+  annotations: Array<[string, string]>;
 };
 export type PersistableState = State;
 
@@ -38,7 +39,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
           datasourceSuggestionId: table.datasourceSuggestionId,
           score: 0.5,
           title: 'Correlations between filters as graph',
-          state: { colorMap: [], linkColor: '#69707D', groupMap: [] },
+          state: { colorMap: [], linkColor: '#69707D', groupMap: [], annotations: [] },
           previewIcon: 'graphApp',
         });
       }
@@ -46,7 +47,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
     return suggestions;
   },
   initialize(api, state) {
-    return { colorMap: [], linkColor: '#69707D', groupMap: [] };
+    return { colorMap: [], linkColor: '#69707D', groupMap: [], annotations: [] };
   },
 
   getPersistableState(state) {
@@ -189,6 +190,65 @@ export const graphVisualization: Visualization<State, PersistableState> = {
             color={props.state.linkColor}
           />
         </EuiFormRow>
+        <h4>Annotations</h4>
+        {props.state.annotations.map(([field, annotation], index) => {
+          return (
+            <EuiFlexGroup direction="row" key={index}>
+              <EuiFlexItem>
+                <EuiFormRow label="Filter">
+                  <EuiFieldText
+                    value={field}
+                    onChange={e => {
+                      props.setState({
+                        ...props.state,
+                        annotations: props.state.annotations.map((entry, updateIndex) => {
+                          if (updateIndex === index) {
+                            return [e.target.value, entry[1]];
+                          } else {
+                            return entry;
+                          }
+                        }),
+                      });
+                    }}
+                  />
+                </EuiFormRow>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiFormRow label={`Annotation`}>
+                  <EuiFieldText
+                    value={annotation}
+                    onChange={e => {
+                      props.setState({
+                        ...props.state,
+                        annotations: props.state.annotations.map((entry, updateIndex) => {
+                          if (updateIndex === index) {
+                            return [entry[0], e.target.value];
+                          } else {
+                            return entry;
+                          }
+                        }),
+                      });
+                    }}
+                  />
+                </EuiFormRow>
+              </EuiFlexItem>
+            </EuiFlexGroup>
+          );
+        })}
+        <EuiButton
+          iconType="plusInCircle"
+          fill
+          fullWidth
+          onClick={() => {
+            props.setState({
+              ...props.state,
+              annotations: [...props.state.annotations, ['prefix', 'My annotation']],
+            });
+          }}
+          size="s"
+          iconSide="left"
+          color="primary"
+        />
       </div>,
       domElement
     );
@@ -199,5 +259,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
       state.colorMap.reduce((o, [key, value]) => ({ ...o, [key]: value }), {})
     )}' groupMap='${JSON.stringify(
       state.groupMap.reduce((o, [key, value]) => ({ ...o, [key]: value }), {})
-    )}' linkColor='${state.linkColor}'`,
+    )}' linkColor='${state.linkColor}' annotations='${JSON.stringify(
+      state.annotations.reduce((o, [key, value]) => ({ ...o, [key]: value }), {})
+    )}'`,
 };
