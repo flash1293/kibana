@@ -187,6 +187,8 @@ export const datatableVisualization: Visualization<
       domElement
     ),
 
-    toExpression: (state, datasource) =>
-    `lens_map_adjacency_matrix ${datasource.getTableSpec().map((col) => !datasource.getOperationForColumnId(col.columnId)!.isBucketed ? `metricColumns=${col.columnId}` : '').join(' ')} | lens_graph_chart colorMap='{}' groupMap='{}' linkColor='black'`,
+    toExpression: (state, datasource) => {
+
+     return `lens_map_adjacency_matrix ${datasource.getTableSpec().map((col) => !datasource.getOperationForColumnId(col.columnId)!.isBucketed ? `metricColumns=${col.columnId}` : '').join(' ')} | lens_graph_chart annotations='{}' colorMap='{}' groupMap='{}' linkColor='lightgray'`
+    }
 };
