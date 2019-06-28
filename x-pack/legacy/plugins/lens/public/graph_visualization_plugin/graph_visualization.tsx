@@ -19,9 +19,9 @@ import { Visualization, VisualizationSuggestion, Operation } from '../types';
 import { NativeRenderer } from '../native_renderer';
 
 export type State = {
-  colorMap: Record<string, string>;
+  colorMap: Array<[string, string]>;
   linkColor: string;
-  groupMap: Record<string, boolean>;
+  groupMap: Array<[string, boolean]>;
 };
 export type PersistableState = State;
 
@@ -38,15 +38,15 @@ export const graphVisualization: Visualization<State, PersistableState> = {
           datasourceSuggestionId: table.datasourceSuggestionId,
           score: 0.5,
           title: 'Correlations between filters as graph',
-          state: { colorMap: {}, linkColor: '#69707D', groupMap: {} },
-          previewIcon: 'graphApp'
+          state: { colorMap: [], linkColor: '#69707D', groupMap: [] },
+          previewIcon: 'graphApp',
         });
       }
     });
     return suggestions;
   },
   initialize(api, state) {
-    return { colorMap: {}, linkColor: '#69707D', groupMap: {} };
+    return { colorMap: [], linkColor: '#69707D', groupMap: [] };
   },
 
   getPersistableState(state) {
@@ -87,9 +87,10 @@ export const graphVisualization: Visualization<State, PersistableState> = {
             }}
           />
         </EuiFormRow>
-        {Object.entries(props.state.colorMap).map(([field, color]) => {
+        <h4>Color settings</h4>
+        {props.state.colorMap.map(([field, color], index) => {
           return (
-            <EuiFlexGroup direction="column" key={color}>
+            <EuiFlexGroup direction="column" key={index}>
               <EuiFlexItem>
                 <EuiFlexGroup>
                   <EuiFlexItem>
@@ -99,15 +100,20 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                         onChange={e => {
                           props.setState({
                             ...props.state,
-                            colorMap: Object.entries(props.state.colorMap)
-                              .filter(([key, _]) => key !== field)
-                              .concat([[e.target.value, props.state.colorMap[field]]])
-                              .map(([key, val]) => ({ [key]: val }))
-                              .reduce((a, b) => ({ ...a, ...b }), {}),
-                            groupMap: {
-                              ...props.state.groupMap,
-                              [e.target.value]: props.state.groupMap[field],
-                            },
+                            colorMap: props.state.colorMap.map((entry, updateIndex) => {
+                              if (updateIndex === index) {
+                                return [e.target.value, entry[1]];
+                              } else {
+                                return entry;
+                              }
+                            }),
+                            groupMap: props.state.groupMap.map((entry, updateIndex) => {
+                              if (updateIndex === index) {
+                                return [e.target.value, entry[1]];
+                              } else {
+                                return entry;
+                              }
+                            }),
                           });
                         }}
                       />
@@ -119,10 +125,13 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                         onChange={value => {
                           props.setState({
                             ...props.state,
-                            colorMap: {
-                              ...props.state.colorMap,
-                              [field]: value,
-                            },
+                            colorMap: props.state.colorMap.map((entry, updateIndex) => {
+                              if (updateIndex === index) {
+                                return [entry[0], value];
+                              } else {
+                                return entry;
+                              }
+                            }),
                           });
                         }}
                         color={color}
@@ -135,14 +144,17 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                 <EuiFormRow label={`Show as group`}>
                   <EuiCheckbox
                     id={`group-${field}`}
-                    checked={props.state.groupMap[field]}
+                    checked={props.state.groupMap[index][1]}
                     onChange={e => {
                       props.setState({
                         ...props.state,
-                        groupMap: {
-                          ...props.state.groupMap,
-                          [field]: !props.state.groupMap[field],
-                        },
+                        groupMap: props.state.groupMap.map((entry, updateIndex) => {
+                          if (updateIndex === index) {
+                            return [entry[0], !entry[1]];
+                          } else {
+                            return entry;
+                          }
+                        }),
                       });
                     }}
                   />
@@ -158,10 +170,8 @@ export const graphVisualization: Visualization<State, PersistableState> = {
           onClick={() => {
             props.setState({
               ...props.state,
-              colorMap: {
-                ...props.state.colorMap,
-                prefix: '#98A2B3',
-              },
+              colorMap: [...props.state.colorMap, ['prefix', '#98A2B3']],
+              groupMap: [...props.state.groupMap, ['prefix', false]],
             });
           }}
           size="s"
@@ -185,5 +195,9 @@ export const graphVisualization: Visualization<State, PersistableState> = {
   },
 
   toExpression: state =>
-    `lens_graph_chart colorMap='${JSON.stringify(state.colorMap)}' groupMap='${JSON.stringify(state.groupMap)}' linkColor='${state.linkColor}'`,
+    `lens_graph_chart colorMap='${JSON.stringify(
+      state.colorMap.reduce((o, [key, value]) => ({ ...o, [key]: value }), {})
+    )}' groupMap='${JSON.stringify(
+      state.groupMap.reduce((o, [key, value]) => ({ ...o, [key]: value }), {})
+    )}' linkColor='${state.linkColor}'`,
 };
