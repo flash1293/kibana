@@ -12,7 +12,11 @@ export interface MapToAdjacencyArgs {
 }
 
 function getId(idParts: unknown[][]) {
-  return idParts.slice(1).reverse().map(([key, val]) => `${val}`).join(' and ');
+  return idParts
+    .slice(1)
+    .reverse()
+    .map(([key, val]) => `${val}`)
+    .join(' and ');
 }
 
 function nodeToFilterPairRows({
@@ -73,25 +77,28 @@ export const mapAdjacencyMatrix: ExpressionFunction<
       };
     });
 
-    const higherLevelNodes: {
+    const higherLevelNodes: Array<{
       idParts: unknown[][];
       metrics: unknown[][];
-    }[] = [];
+    }> = [];
 
     nodes.forEach(node => {
       node.idParts.forEach((_, index) => {
         const higherLevelNodeIdParts = node.idParts.slice(0, node.idParts.length - index);
         const higherLevelNode = higherLevelNodes.find(n => {
-          return n.idParts.length === higherLevelNodeIdParts.length && n.idParts.every(([nk, nv], index) => {
-            return (
-              nk === higherLevelNodeIdParts[index][0] && nv === higherLevelNodeIdParts[index][1]
-            );
-          });
+          return (
+            n.idParts.length === higherLevelNodeIdParts.length &&
+            n.idParts.every(([nk, nv], index2) => {
+              return (
+                nk === higherLevelNodeIdParts[index2][0] && nv === higherLevelNodeIdParts[index2][1]
+              );
+            })
+          );
         });
         if (higherLevelNode) {
-          higherLevelNode.metrics = higherLevelNode.metrics.map(([metricK, metricV], index) => [
+          higherLevelNode.metrics = higherLevelNode.metrics.map(([metricK, metricV], index2) => [
             metricK,
-            Number(metricV) + Number(node.metrics[index][1]),
+            Number(metricV) + Number(node.metrics[index2][1]),
           ]);
         } else {
           higherLevelNodes.push({
@@ -107,7 +114,10 @@ export const mapAdjacencyMatrix: ExpressionFunction<
       ...context,
       columns: [
         { id: 'filterPair', name: 'filterPair' },
-        ...nodes[0].metrics.map((_, index) => ({ id: `value${index}`, name: context.columns.find(col => col.id === metricColumns[index])!.name })),
+        ...nodes[0].metrics.map((_, index) => ({
+          id: `value${index}`,
+          name: context.columns.find(col => col.id === metricColumns[index])!.name,
+        })),
       ],
       rows: _.flatten(higherLevelNodes.map(node => nodeToFilterPairRows(node))),
     };

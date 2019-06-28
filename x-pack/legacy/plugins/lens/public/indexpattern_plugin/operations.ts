@@ -49,7 +49,7 @@ export const operationDefinitionMap: AllOperationDefinitions = {
   sum: sumOperation,
   count: countOperation,
   filters: filtersOperation,
-  adjacency: adjacencyOperation
+  adjacency: adjacencyOperation,
 };
 const operationDefinitions: PossibleOperationDefinitions[] = Object.values(operationDefinitionMap);
 

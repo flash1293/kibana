@@ -157,7 +157,7 @@ export const datatableVisualization: Visualization<
     VisualizationSuggestion<DatatableVisualizationState>
   > {
     return tables.map(table => {
-      const title = "As a tree view";
+      const title = 'As a tree view';
 
       return {
         title,
@@ -182,8 +182,16 @@ export const datatableVisualization: Visualization<
       domElement
     ),
 
-    toExpression: (state, datasource) => {
-
-     return `lens_map_adjacency_matrix ${datasource.getTableSpec().map((col) => !datasource.getOperationForColumnId(col.columnId)!.isBucketed ? `metricColumns=${col.columnId}` : '').join(' ')} | lens_graph_chart annotations='{}' colorMap='{}' groupMap='{}' linkColor='lightgray'`
-    }
+  toExpression: (state, datasource) => {
+    return `lens_map_adjacency_matrix ${datasource
+      .getTableSpec()
+      .map(col =>
+        !datasource.getOperationForColumnId(col.columnId)!.isBucketed
+          ? `metricColumns=${col.columnId}`
+          : ''
+      )
+      .join(
+        ' '
+      )} | lens_graph_chart annotations='{}' colorMap='{}' groupMap='{}' linkColor='lightgray'`;
+  },
 };

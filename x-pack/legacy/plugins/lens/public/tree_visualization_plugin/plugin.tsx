@@ -6,6 +6,8 @@
 
 // import { Registry } from '@kbn/interpreter/target/common';
 import { CoreSetup } from 'src/core/public';
+import { Registry } from '@kbn/interpreter/target/common';
+import { ExpressionFunction } from 'src/legacy/core_plugins/interpreter/types';
 import { datatableVisualization } from './visualization';
 
 import {
@@ -14,8 +16,6 @@ import {
   // @ts-ignore untyped dependency
 } from '../../../../../../src/legacy/core_plugins/interpreter/public/registries';
 import { mapAdjacencyMatrix } from './expression';
-import { Registry } from '@kbn/interpreter/target/common';
-import { ExpressionFunction } from 'src/legacy/core_plugins/interpreter/types';
 
 interface RenderHandlers {
   done: () => void;

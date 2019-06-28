@@ -6,7 +6,14 @@
 
 import React from 'react';
 import { i18n } from '@kbn/i18n';
-import { EuiFormRow, EuiButton, EuiFormControlLayout, EuiFieldText, EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
+import {
+  EuiFormRow,
+  EuiButton,
+  EuiFormControlLayout,
+  EuiFieldText,
+  EuiFlexGroup,
+  EuiFlexItem,
+} from '@elastic/eui';
 import {
   IndexPatternField,
   FiltersIndexPatternColumn,

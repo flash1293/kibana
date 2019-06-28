@@ -6,7 +6,11 @@
 
 import _ from 'lodash';
 
-import { IndexPatternPrivateState, IndexPatternColumn, AdjacencyIndexPatternColumn } from './indexpattern';
+import {
+  IndexPatternPrivateState,
+  IndexPatternColumn,
+  AdjacencyIndexPatternColumn,
+} from './indexpattern';
 import { operationDefinitionMap, OperationDefinition } from './operations';
 
 function getAggForColumn(col: IndexPatternColumn) {
@@ -46,14 +50,16 @@ export function toExpression(state: IndexPatternPrivateState) {
   );
 
   const sortedColumns = columnEntries.map(([_id, col]) => col);
-    const hasAdjacencyOperation = sortedColumns.some(col => col.operationType === 'adjacency');
-    if (hasAdjacencyOperation) {
-      const [firstColumn, ...otherColumns] = sortedColumns;
-      const childAgg = otherColumns.map(col => getAggForColumn(col));
-      return `lens_graph_data filters='${JSON.stringify(
-        (firstColumn as AdjacencyIndexPatternColumn).params.filters
-      )}' childAggs='${JSON.stringify(childAgg)}' childAggNames='${JSON.stringify(otherColumns.map(col => col.label))}'`;
-    }
+  const hasAdjacencyOperation = sortedColumns.some(col => col.operationType === 'adjacency');
+  if (hasAdjacencyOperation) {
+    const [firstColumn, ...otherColumns] = sortedColumns;
+    const childAgg = otherColumns.map(col => getAggForColumn(col));
+    return `lens_graph_data filters='${JSON.stringify(
+      (firstColumn as AdjacencyIndexPatternColumn).params.filters
+    )}' childAggs='${JSON.stringify(childAgg)}' childAggNames='${JSON.stringify(
+      otherColumns.map(col => col.label)
+    )}'`;
+  }
 
   if (columnEntries.length) {
     const aggs = columnEntries.map(([colId, col]) => {

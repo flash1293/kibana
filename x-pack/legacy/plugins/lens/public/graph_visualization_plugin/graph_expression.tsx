@@ -26,7 +26,7 @@ const scaleFactor = 1.2;
 
 export interface GraphChartProps {
   data: KibanaDatatable;
-  args: { colorMap: string; linkColor: string; groupMap: string, annotations: string };
+  args: { colorMap: string; linkColor: string; groupMap: string; annotations: string };
 }
 
 export interface GraphRender {
@@ -100,7 +100,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
   const elementRef = useRef<SVGSVGElement | null>(null);
   const colorMap = JSON.parse(args.colorMap);
   const groupMap = JSON.parse(args.groupMap);
-  const annotations = JSON.parse(args.annotations)
+  const annotations = JSON.parse(args.annotations);
   function renderD3(el: SVGSVGElement) {
     const svg = d3.select(el),
       width = +svg.attr('width'),
@@ -120,7 +120,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .force('charge', d3.forceManyBody().strength(-100 * LINK_SCALE))
       .force('center', d3.forceCenter(width / 2, height / 2));
 
-          // @ts-ignore
+    // @ts-ignore
     const graphLinksAndNodes = (data.rows as GraphRow[]).map(
       ({ filterPair: [source, target], value0, value1 }) => ({
         source,
@@ -130,11 +130,15 @@ export function GraphChart({ data, args }: GraphChartProps) {
       })
     );
 
-    const valueline = d3.line()
-    .x(function(d) { return d[0]; })
-    .y(function(d) { return d[1]; })
-    .curve(d3.curveCatmullRomClosed);
- 
+    const valueline = d3
+      .line()
+      .x(function(d) {
+        return d[0];
+      })
+      .y(function(d) {
+        return d[1];
+      })
+      .curve(d3.curveCatmullRomClosed);
 
     const nodeWeights = graphLinksAndNodes.reduce(
       (weightMap, { source, target, value }) =>
@@ -150,7 +154,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
 
     const graph = {
       nodes: _.uniq(
-          // @ts-ignore
+        // @ts-ignore
         (data.rows as GraphRow[])
           .map(({ filterPair }) => filterPair)
           .reduce((a, b) => [...a, ...b], [] as string[])
@@ -182,7 +186,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
           groupId,
           count: graph.nodes.filter(function({ id }) {
             const matchingPrefix = Object.keys(colorMap).find(prefix => id.startsWith(prefix));
-            return matchingPrefix && matchingPrefix == groupId;
+            return matchingPrefix && matchingPrefix === groupId;
           }).length,
         };
       })
@@ -196,7 +200,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
     const paths = svg
       .append('g')
       .selectAll('.path_placeholder')
-          // @ts-ignore
+      // @ts-ignore
       .data(groupIds, function(d) {
         return d;
       })
@@ -204,57 +208,69 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .append('g')
       .attr('class', 'path_placeholder')
       .append('path')
-          // @ts-ignore
+      // @ts-ignore
       .attr('stroke', function(d) {
         return 'bloack';
       })
-          // @ts-ignore
+      // @ts-ignore
       .attr('fill', function(d) {
         return colorMap[d];
-      }).attr('style', 'opacity: 0.3');
+      })
+      .attr('style', 'opacity: 0.3');
 
-      var polygonGenerator = function(groupId: string) {
-        var node_coords = node
-          .filter(function(d) { return d.id.startsWith(groupId); })
-          .data()
+    const polygonGenerator = function(groupId: string) {
+      const nodecoords = node
+        .filter(function(d) {
+          return d.id.startsWith(groupId);
+        })
+        .data()
+        // @ts-ignore
+        .map(function(d) {
           // @ts-ignore
-          .map(function(d) { return [d.x, d.y]; });
-          
-          // @ts-ignore
-        return d3.polygonHull(node_coords);
-      };
-      
-      
-      
-      function updateGroups() {
-        groupIds.forEach(function(groupId) {
-          // @ts-ignore
-          let centroid;
-          // @ts-ignore
-          var path = paths.filter(function(d) { return d == groupId;})
-            .attr('transform', 'scale(1) translate(0,0)')
-          // @ts-ignore
-            .attr('d', function(d) {
-              const polygon = polygonGenerator(d);          
-              centroid = d3.polygonCentroid(polygon);
-      
-              // to scale the shape properly around its points:
-              // move the 'g' element to the centroid point, translate
-              // all the path around the center of the 'g' and then
-              // we can scale the 'g' element properly
-              return valueline(
-          // @ts-ignore
-                polygon.map(function(point) {
-          // @ts-ignore
-                  return [  point[0] - centroid[0], point[1] - centroid[1] ];
-                })
-              );
-            });
-      
-          // @ts-ignore
-          d3.select(path.node().parentNode).attr('transform', 'translate('  + centroid[0] + ',' + (centroid[1]) + ') scale(' + scaleFactor + ')');
+          return [d.x, d.y];
         });
-      }
+
+      // @ts-ignore
+      return d3.polygonHull(nodecoords);
+    };
+
+    function updateGroups() {
+      groupIds.forEach(function(groupId) {
+        // @ts-ignore
+        let centroid;
+        // @ts-ignore
+        const path = paths
+          // @ts-ignore
+          .filter(function(d) {
+            return d === groupId;
+          })
+          .attr('transform', 'scale(1) translate(0,0)')
+          // @ts-ignore
+          .attr('d', function(d) {
+            const polygon = polygonGenerator(d);
+            centroid = d3.polygonCentroid(polygon);
+
+            // to scale the shape properly around its points:
+            // move the 'g' element to the centroid point, translate
+            // all the path around the center of the 'g' and then
+            // we can scale the 'g' element properly
+            return valueline(
+              // @ts-ignore
+              polygon.map(function(point) {
+                // @ts-ignore
+                return [point[0] - centroid[0], point[1] - centroid[1]];
+              })
+            );
+          });
+
+        // @ts-ignore
+        d3.select(path.node().parentNode).attr(
+          'transform',
+          // @ts-ignore
+          'translate(' + centroid[0] + ',' + centroid[1] + ') scale(' + scaleFactor + ')'
+        );
+      });
+    }
 
     const link = svg
       .append('g')
@@ -285,7 +301,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
           ReactDOM.render(
             <>
               <EuiWrappingPopover
-          // @ts-ignore
+                // @ts-ignore
                 id={d3Data[index].target + '' + d3Data[index].source.id}
                 button={mountpoint}
                 isOpen={true}
@@ -293,15 +309,17 @@ export function GraphChart({ data, args }: GraphChartProps) {
                   ReactDOM.unmountComponentAtNode(mountpoint);
                   document
                     .querySelectorAll('[data-focus-lock-disabled="disabled"]')
-                    .forEach(el => el.remove());
+                    .forEach(el2 => el2.remove());
                   anchor.remove();
                 }}
                 anchorPosition="upCenter"
               >
                 <EuiText grow={false}>
                   <h2>
-                    Intersection of <EuiCode>{(d3Data[index].source as unknown as { id: string }).id}</EuiCode> and{' '}
-                    <EuiCode>{(d3Data[index].target as unknown as { id: string }).id}</EuiCode>
+                    Intersection of{' '}
+                    <EuiCode>{((d3Data[index].source as unknown) as { id: string }).id}</EuiCode>{' '}
+                    and{' '}
+                    <EuiCode>{((d3Data[index].target as unknown) as { id: string }).id}</EuiCode>
                   </h2>
                 </EuiText>
                 <EuiDescriptionList>
@@ -328,7 +346,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
             ReactDOM.unmountComponentAtNode(mountpoint);
             document
               .querySelectorAll('[data-focus-lock-disabled="disabled"]')
-              .forEach(el => el.remove());
+              .forEach(el2 => el2.remove());
             anchor.remove();
           }
         });
@@ -363,7 +381,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .attr('r', ({ value }) => (value / maxValue) * NODE_SCALE + 3)
       .attr('fill', d => {
         const mappedPrefix = Object.keys(colorMap).find(prefix => d.id.startsWith(prefix));
-        const isGroupColor = mappedPrefix && groupMap[mappedPrefix]
+        const isGroupColor = mappedPrefix && groupMap[mappedPrefix];
         if (mappedPrefix && !isGroupColor) {
           return colorMap[mappedPrefix];
         }
@@ -382,22 +400,24 @@ export function GraphChart({ data, args }: GraphChartProps) {
         const d3Data = d.data();
         const nodes = d.nodes();
 
-        nodes.forEach((node, index) => {
+        nodes.forEach((node2, index) => {
           let mountpoint: HTMLElement;
           let anchor: HTMLElement;
-          const mappedPrefix = Object.keys(annotations).find(prefix => d3Data[index].id.startsWith(prefix));
+          const mappedPrefix = Object.keys(annotations).find(prefix =>
+            d3Data[index].id.startsWith(prefix)
+          );
           const annotation = mappedPrefix && annotations[mappedPrefix];
 
-          node.addEventListener('mouseover', () => {
+          node2.addEventListener('mouseover', () => {
             mountpoint = document.createElement('div');
             anchor = document.createElement('div');
             document.body.appendChild(anchor);
             anchor.appendChild(mountpoint);
             anchor.style.position = 'absolute';
             anchor.style.top =
-              node.getBoundingClientRect().top - node.getBoundingClientRect().height / 2 + 'px';
+              node2.getBoundingClientRect().top - node2.getBoundingClientRect().height / 2 + 'px';
             anchor.style.left =
-              node.getBoundingClientRect().left + node.getBoundingClientRect().width / 2 + 'px';
+              node2.getBoundingClientRect().left + node2.getBoundingClientRect().width / 2 + 'px';
 
             ReactDOM.render(
               <>
@@ -409,7 +429,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
                     ReactDOM.unmountComponentAtNode(mountpoint);
                     document
                       .querySelectorAll('[data-focus-lock-disabled="disabled"]')
-                      .forEach(el => el.remove());
+                      .forEach(el2 => el2.remove());
                     anchor.remove();
                   }}
                   anchorPosition="upCenter"
@@ -432,24 +452,24 @@ export function GraphChart({ data, args }: GraphChartProps) {
                         </EuiDescriptionListDescription>
                       </>
                     )}
-                    {annotation && <>
+                    {annotation && (
+                      <>
                         <EuiDescriptionListTitle>Annotation</EuiDescriptionListTitle>
-                        <EuiDescriptionListDescription>
-                          {annotation}
-                        </EuiDescriptionListDescription>
-                      </>}
+                        <EuiDescriptionListDescription>{annotation}</EuiDescriptionListDescription>
+                      </>
+                    )}
                   </EuiDescriptionList>
                 </EuiWrappingPopover>
               </>,
               mountpoint
             );
           });
-          node.addEventListener('mouseout', () => {
+          node2.addEventListener('mouseout', () => {
             if (mountpoint) {
               ReactDOM.unmountComponentAtNode(mountpoint);
               document
                 .querySelectorAll('[data-focus-lock-disabled="disabled"]')
-                .forEach(el => el.remove());
+                .forEach(el2 => el2.remove());
               anchor.remove();
             }
           });
@@ -476,61 +496,57 @@ export function GraphChart({ data, args }: GraphChartProps) {
     `
       )
       .text(({ id }) => id);
-      
 
-        // @ts-ignore
+    // @ts-ignore
     simulation.nodes(graph.nodes).on('tick', ticked);
 
-        // @ts-ignore
+    // @ts-ignore
     simulation.force('link')!.links(graph.links);
-
-    console.log('data flushed');
 
     function ticked() {
       link
         .attr('x1', function(d) {
-        // @ts-ignore
+          // @ts-ignore
           return d.source.x;
         })
         .attr('y1', function(d) {
-        // @ts-ignore
+          // @ts-ignore
           return d.source.y;
         })
         .attr('x2', function(d) {
-        // @ts-ignore
+          // @ts-ignore
           return d.target.x;
         })
         .attr('y2', function(d) {
-        // @ts-ignore
+          // @ts-ignore
           return d.target.y;
         });
 
-        // @ts-ignore
+      // @ts-ignore
       node.attr('transform', function(d) {
         // @ts-ignore
         return `translate(${d.x}, ${d.y})`;
       });
 
       updateGroups();
-
     }
 
-        // @ts-ignore
+    // @ts-ignore
     function dragstarted(d) {
-        // @ts-ignore
+      // @ts-ignore
       d3.select(this).classed('fixed', (d.fixed = true));
       if (!d3.event.active) simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
     }
 
-        // @ts-ignore
+    // @ts-ignore
     function dragged(d) {
       d.fx = d3.event.x;
       d.fy = d3.event.y;
     }
 
-        // @ts-ignore
+    // @ts-ignore
     function dragended(d) {
       if (!d3.event.active) simulation.alphaTarget(0);
       // d.fx = null;

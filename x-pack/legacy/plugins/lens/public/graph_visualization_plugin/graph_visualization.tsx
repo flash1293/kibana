@@ -18,17 +18,17 @@ import {
 import { Visualization, VisualizationSuggestion, Operation } from '../types';
 import { NativeRenderer } from '../native_renderer';
 
-export type State = {
+export interface State {
   colorMap: Array<[string, string]>;
   linkColor: string;
   groupMap: Array<[string, boolean]>;
   annotations: Array<[string, string]>;
-};
+}
 export type PersistableState = State;
 
 export const graphVisualization: Visualization<State, PersistableState> = {
   getSuggestions: ({ tables }) => {
-    const suggestions: VisualizationSuggestion<State>[] = [];
+    const suggestions: Array<VisualizationSuggestion<State>> = [];
     tables.forEach(table => {
       if (
         table.isMultiRow &&
@@ -107,14 +107,14 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                               } else {
                                 return entry;
                               }
-                            }) as [string, string][],
+                            }) as Array<[string, string]>,
                             groupMap: props.state.groupMap.map((entry, updateIndex) => {
                               if (updateIndex === index) {
                                 return [e.target.value, entry[1]];
                               } else {
                                 return entry;
                               }
-                            }) as [string, boolean][],
+                            }) as Array<[string, boolean]>,
                           });
                         }}
                       />
@@ -132,7 +132,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                               } else {
                                 return entry;
                               }
-                            }) as [string, string][],
+                            }) as Array<[string, string]>,
                           });
                         }}
                         color={color}
@@ -155,7 +155,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                           } else {
                             return entry;
                           }
-                        }) as [string, boolean][],
+                        }) as Array<[string, boolean]>,
                       });
                     }}
                   />
@@ -207,7 +207,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                           } else {
                             return entry;
                           }
-                        }) as [string, string][],
+                        }) as Array<[string, string]>,
                       });
                     }}
                   />
@@ -226,7 +226,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                           } else {
                             return entry;
                           }
-                        }) as [string, string][],
+                        }) as Array<[string, string]>,
                       });
                     }}
                   />
