@@ -14,6 +14,7 @@ import {
 } from '../datatable_visualization_plugin';
 import { graphVisualizationSetup } from '../graph_visualization_plugin';
 import { treeVisualizationSetup } from '../tree_visualization_plugin';
+import { graphDatasourceSetup } from '../dummy_graphdata_plugin';
 import { App } from './app';
 import { EditorFrameInstance } from '../types';
 
@@ -31,6 +32,7 @@ export class AppPlugin {
     const editorFrame = editorFrameSetup();
     const graphVisualization = graphVisualizationSetup();
     const treeVisualization = treeVisualizationSetup();
+    graphDatasourceSetup();
 
     editorFrame.registerDatasource('indexpattern', indexPattern);
     editorFrame.registerVisualization('xy', xyVisualization);
