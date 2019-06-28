@@ -12,7 +12,7 @@ import { App } from './app';
 import { EditorFrameInstance } from '../types';
 import { graphDatasourceSetup, graphDatasourceStop } from '../dummy_graphdata_plugin';
 import { graphVisualizationSetup, graphVisualizationStop } from '../graph_visualization_plugin';
-import { datatableVisualizationSetup } from '../datatable_visualization_plugin';
+import { datatableVisualizationSetup as treeVisualizationSetup } from '../tree_visualization_plugin';
 
 export class AppPlugin {
   private instance: EditorFrameInstance | null = null;
@@ -31,7 +31,7 @@ export class AppPlugin {
 
     editorFrame.registerDatasource('indexpattern', indexPattern);
     editorFrame.registerDatasource('graph', graph);
-    editorFrame.registerVisualization('tree', datatableVisualization);
+    editorFrame.registerVisualization('tree', treeVisualizationSetup);
     editorFrame.registerVisualization('xy', xyVisualization);
     editorFrame.registerVisualization('graph', graphVisualization);
 
