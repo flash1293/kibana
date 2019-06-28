@@ -100,6 +100,7 @@ export function getGraphDatasource(): Datasource<InternalState, InternalState> {
       },
       duplicateColumn: () => [],
       getOperationForColumnId: () => null,
+      generateColumnId: () => 'adsasd',
       getTableSpec: () => [],
       moveColumnTo: () => {},
       removeColumnInTableSpec: () => [],

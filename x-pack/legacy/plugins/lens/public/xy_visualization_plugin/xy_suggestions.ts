@@ -17,6 +17,7 @@ import { State } from './types';
 import { toExpression } from './to_expression';
 
 const columnSortOrder = {
+  filterPair: -1,
   date: 0,
   string: 1,
   boolean: 2,

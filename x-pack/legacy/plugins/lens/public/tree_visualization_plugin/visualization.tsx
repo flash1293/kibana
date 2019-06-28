@@ -157,12 +157,7 @@ export const datatableVisualization: Visualization<
     VisualizationSuggestion<DatatableVisualizationState>
   > {
     return tables.map(table => {
-      const title = i18n.translate('xpack.lens.datatable.visualizationOf', {
-        defaultMessage: 'Table: ${operations}',
-        values: {
-          operations: table.columns.map(col => col.operation.label).join(' & '),
-        },
-      });
+      const title = "As a tree view";
 
       return {
         title,

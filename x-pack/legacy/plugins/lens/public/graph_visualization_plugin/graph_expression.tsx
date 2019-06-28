@@ -16,7 +16,7 @@ import {
   EuiDescriptionListDescription,
   EuiText,
 } from '@elastic/eui';
-import { ExpressionFunction } from '../../../../../src/legacy/core_plugins/interpreter/public';
+import { ExpressionFunction } from '../../../../../../src/legacy/core_plugins/interpreter/public';
 import { KibanaDatatable } from '../types';
 import { RenderFunction } from './plugin';
 
@@ -38,7 +38,7 @@ export interface GraphRender {
 export const graphChart: ExpressionFunction<
   'lens_graph_chart',
   KibanaDatatable,
-  { colorMap: string; linkColor: string; groupMap: string },
+  { colorMap: string; linkColor: string; groupMap: string; annotations: string },
   GraphRender
 > = {
   name: 'lens_graph_chart',
@@ -113,12 +113,14 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .force(
         'link',
         d3.forceLink().id(function(d) {
+          // @ts-ignore
           return d.id;
         })
       )
       .force('charge', d3.forceManyBody().strength(-100 * LINK_SCALE))
       .force('center', d3.forceCenter(width / 2, height / 2));
 
+          // @ts-ignore
     const graphLinksAndNodes = (data.rows as GraphRow[]).map(
       ({ filterPair: [source, target], value0, value1 }) => ({
         source,
@@ -148,6 +150,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
 
     const graph = {
       nodes: _.uniq(
+          // @ts-ignore
         (data.rows as GraphRow[])
           .map(({ filterPair }) => filterPair)
           .reduce((a, b) => [...a, ...b], [] as string[])
@@ -193,6 +196,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
     const paths = svg
       .append('g')
       .selectAll('.path_placeholder')
+          // @ts-ignore
       .data(groupIds, function(d) {
         return d;
       })
@@ -200,9 +204,11 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .append('g')
       .attr('class', 'path_placeholder')
       .append('path')
+          // @ts-ignore
       .attr('stroke', function(d) {
         return 'bloack';
       })
+          // @ts-ignore
       .attr('fill', function(d) {
         return colorMap[d];
       }).attr('style', 'opacity: 0.3');
@@ -211,8 +217,10 @@ export function GraphChart({ data, args }: GraphChartProps) {
         var node_coords = node
           .filter(function(d) { return d.id.startsWith(groupId); })
           .data()
+          // @ts-ignore
           .map(function(d) { return [d.x, d.y]; });
           
+          // @ts-ignore
         return d3.polygonHull(node_coords);
       };
       
@@ -220,9 +228,12 @@ export function GraphChart({ data, args }: GraphChartProps) {
       
       function updateGroups() {
         groupIds.forEach(function(groupId) {
+          // @ts-ignore
           let centroid;
+          // @ts-ignore
           var path = paths.filter(function(d) { return d == groupId;})
             .attr('transform', 'scale(1) translate(0,0)')
+          // @ts-ignore
             .attr('d', function(d) {
               const polygon = polygonGenerator(d);          
               centroid = d3.polygonCentroid(polygon);
@@ -232,12 +243,15 @@ export function GraphChart({ data, args }: GraphChartProps) {
               // all the path around the center of the 'g' and then
               // we can scale the 'g' element properly
               return valueline(
+          // @ts-ignore
                 polygon.map(function(point) {
+          // @ts-ignore
                   return [  point[0] - centroid[0], point[1] - centroid[1] ];
                 })
               );
             });
       
+          // @ts-ignore
           d3.select(path.node().parentNode).attr('transform', 'translate('  + centroid[0] + ',' + (centroid[1]) + ') scale(' + scaleFactor + ')');
         });
       }
@@ -271,6 +285,7 @@ export function GraphChart({ data, args }: GraphChartProps) {
           ReactDOM.render(
             <>
               <EuiWrappingPopover
+          // @ts-ignore
                 id={d3Data[index].target + '' + d3Data[index].source.id}
                 button={mountpoint}
                 isOpen={true}
@@ -285,8 +300,8 @@ export function GraphChart({ data, args }: GraphChartProps) {
               >
                 <EuiText grow={false}>
                   <h2>
-                    Intersection of <EuiCode>{d3Data[index].source.id}</EuiCode> and{' '}
-                    <EuiCode>{d3Data[index].target.id}</EuiCode>
+                    Intersection of <EuiCode>{(d3Data[index].source as unknown as { id: string }).id}</EuiCode> and{' '}
+                    <EuiCode>{(d3Data[index].target as unknown as { id: string }).id}</EuiCode>
                   </h2>
                 </EuiText>
                 <EuiDescriptionList>
@@ -329,10 +344,13 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .append('g')
       .on('dblclick', d => {
         if (!d3.event.active) simulation.alphaTarget(0);
+        // @ts-ignore
         d.fx = null;
+        // @ts-ignore
         d.fy = null;
       })
       .call(
+        // @ts-ignore
         d3
           .drag()
           .on('start', dragstarted)
@@ -460,8 +478,10 @@ export function GraphChart({ data, args }: GraphChartProps) {
       .text(({ id }) => id);
       
 
+        // @ts-ignore
     simulation.nodes(graph.nodes).on('tick', ticked);
 
+        // @ts-ignore
     simulation.force('link')!.links(graph.links);
 
     console.log('data flushed');
@@ -469,19 +489,25 @@ export function GraphChart({ data, args }: GraphChartProps) {
     function ticked() {
       link
         .attr('x1', function(d) {
+        // @ts-ignore
           return d.source.x;
         })
         .attr('y1', function(d) {
+        // @ts-ignore
           return d.source.y;
         })
         .attr('x2', function(d) {
+        // @ts-ignore
           return d.target.x;
         })
         .attr('y2', function(d) {
+        // @ts-ignore
           return d.target.y;
         });
 
+        // @ts-ignore
       node.attr('transform', function(d) {
+        // @ts-ignore
         return `translate(${d.x}, ${d.y})`;
       });
 
@@ -489,18 +515,22 @@ export function GraphChart({ data, args }: GraphChartProps) {
 
     }
 
+        // @ts-ignore
     function dragstarted(d) {
+        // @ts-ignore
       d3.select(this).classed('fixed', (d.fixed = true));
       if (!d3.event.active) simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
     }
 
+        // @ts-ignore
     function dragged(d) {
       d.fx = d3.event.x;
       d.fy = d3.event.y;
     }
 
+        // @ts-ignore
     function dragended(d) {
       if (!d3.event.active) simulation.alphaTarget(0);
       // d.fx = null;

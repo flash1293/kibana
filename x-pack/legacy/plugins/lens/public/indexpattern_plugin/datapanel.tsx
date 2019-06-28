@@ -47,6 +47,7 @@ const fieldTypeNames: Record<DataType, string> = {
   number: i18n.translate('xpack.lens.datatypes.number', { defaultMessage: 'number' }),
   boolean: i18n.translate('xpack.lens.datatypes.boolean', { defaultMessage: 'boolean' }),
   date: i18n.translate('xpack.lens.datatypes.date', { defaultMessage: 'date' }),
+  filterPair: i18n.translate('xpack.lens.datatypes.filterPair', { defaultMessage: 'filterPair' }),
 };
 
 export function IndexPatternDataPanel(props: DatasourceDataPanelProps<IndexPatternPrivateState>) {

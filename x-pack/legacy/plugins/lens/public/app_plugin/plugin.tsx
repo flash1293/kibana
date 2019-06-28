@@ -12,9 +12,9 @@ import {
   datatableVisualizationSetup,
   datatableVisualizationStop,
 } from '../datatable_visualization_plugin';
-import { graphDatasourceSetup, graphDatasourceStop } from '../dummy_graphdata_plugin';
-import { graphVisualizationSetup, graphVisualizationStop } from '../graph_visualization_plugin';
-import { treeVisualizationSetup, treeVisualizationStop } from '../tree_visualization_plugin';
+import { graphDatasourceSetup } from '../dummy_graphdata_plugin';
+import { graphVisualizationSetup } from '../graph_visualization_plugin';
+import { treeVisualizationSetup } from '../tree_visualization_plugin';
 import { App } from './app';
 import { EditorFrameInstance } from '../types';
 

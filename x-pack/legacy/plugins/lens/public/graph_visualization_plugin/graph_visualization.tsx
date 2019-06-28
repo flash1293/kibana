@@ -107,14 +107,14 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                               } else {
                                 return entry;
                               }
-                            }),
+                            }) as [string, string][],
                             groupMap: props.state.groupMap.map((entry, updateIndex) => {
                               if (updateIndex === index) {
                                 return [e.target.value, entry[1]];
                               } else {
                                 return entry;
                               }
-                            }),
+                            }) as [string, boolean][],
                           });
                         }}
                       />
@@ -132,7 +132,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                               } else {
                                 return entry;
                               }
-                            }),
+                            }) as [string, string][],
                           });
                         }}
                         color={color}
@@ -155,7 +155,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                           } else {
                             return entry;
                           }
-                        }),
+                        }) as [string, boolean][],
                       });
                     }}
                   />
@@ -207,7 +207,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                           } else {
                             return entry;
                           }
-                        }),
+                        }) as [string, string][],
                       });
                     }}
                   />
@@ -226,7 +226,7 @@ export const graphVisualization: Visualization<State, PersistableState> = {
                           } else {
                             return entry;
                           }
-                        }),
+                        }) as [string, string][],
                       });
                     }}
                   />
