@@ -356,6 +356,78 @@ export function getIndexPatternDatasource(chrome: Chrome, toastNotifications: To
       if (!state.columnOrder.length) {
         return [];
       }
+
+      if (state.columnOrder.length === 2) {
+        const firstColumn = state.columns[state.columnOrder[0]];
+        const secondColumn = state.columns[state.columnOrder[1]];
+        if (firstColumn.operationType === 'filters') {
+          const adjacencyColumn: AdjacencyIndexPatternColumn = {
+            ...firstColumn,
+            operationType: 'adjacency',
+            dataType: 'filterPair',
+          };
+          return [
+            {
+              state: {
+                ...state,
+                columnOrder: ['filterPair', 'value'],
+                columns: {
+                  filterPair: adjacencyColumn,
+                  value: secondColumn,
+                },
+              },
+              table: {
+                isMultiRow: true,
+                datasourceSuggestionId: 0,
+                columns: [
+                  {
+                    columnId: 'filterPair',
+                    operation: columnToOperation(adjacencyColumn),
+                  },
+                  {
+                    columnId: 'value',
+                    operation: columnToOperation(secondColumn),
+                  },
+                ],
+              },
+            },
+          ];
+        }
+
+        if (firstColumn.operationType === 'adjacency') {
+          const filtersColumn: FiltersIndexPatternColumn = {
+            ...firstColumn,
+            operationType: 'filters',
+            dataType: 'string',
+          };
+          return [
+            {
+              state: {
+                ...state,
+                columns: {
+                  ...state.columns,
+                  [state.columnOrder[0]]: filtersColumn,
+                },
+              },
+              table: {
+                isMultiRow: true,
+                datasourceSuggestionId: 0,
+                columns: [
+                  {
+                    columnId: state.columnOrder[0],
+                    operation: columnToOperation(filtersColumn),
+                  },
+                  {
+                    columnId: state.columnOrder[1],
+                    operation: columnToOperation(secondColumn),
+                  },
+                ],
+              },
+            },
+          ];
+        }
+      }
+
       return [
         {
           state,

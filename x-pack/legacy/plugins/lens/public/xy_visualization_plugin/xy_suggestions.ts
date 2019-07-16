@@ -114,23 +114,5 @@ function getSuggestion(
     datasourceSuggestionId,
     state,
     previewIcon: isDate ? 'visLine' : 'visBar',
-    previewExpression: toExpression(
-      {
-        ...state,
-        x: {
-          ...state.x,
-          hide: true,
-        },
-        y: {
-          ...state.y,
-          hide: true,
-        },
-        legend: {
-          ...state.legend,
-          isVisible: false,
-        },
-      },
-      datasource
-    ),
   };
 }
