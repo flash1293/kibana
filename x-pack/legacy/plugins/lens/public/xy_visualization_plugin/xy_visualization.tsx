@@ -98,9 +98,7 @@ export const xyVisualization: Visualization<State, PersistableState> = {
 
   renderConfigPanel: (domElement, props) =>
     render(
-      <I18nProvider>
-        <XYConfigPanel {...props} />
-      </I18nProvider>,
+        <XYConfigPanel {...props} />,
       domElement
     ),
 

@@ -45,20 +45,20 @@ export class AppPlugin {
 
     const renderEditor = (routeProps: RouteComponentProps<{ id?: string }>) => {
       return (
-        <App
-          editorFrame={this.instance!}
-          chrome={chrome}
-          store={new Storage(localStorage)}
-          docId={routeProps.match.params.id}
-          docStorage={store}
-          redirectTo={id => {
-            if (!id) {
-              routeProps.history.push('/');
-            } else {
-              routeProps.history.push(`/edit/${id}`);
-            }
-          }}
-        />
+          <App
+            editorFrame={this.instance!}
+            chrome={chrome}
+            store={new Storage(localStorage)}
+            docId={routeProps.match.params.id}
+            docStorage={store}
+            redirectTo={id => {
+              if (!id) {
+                routeProps.history.push('/');
+              } else {
+                routeProps.history.push(`/edit/${id}`);
+              }
+            }}
+          />
       );
     };
 
@@ -67,7 +67,6 @@ export class AppPlugin {
     }
 
     return (
-      <I18nProvider>
         <HashRouter>
           <Switch>
             <Route exact path="/edit/:id" render={renderEditor} />
@@ -75,7 +74,6 @@ export class AppPlugin {
             <Route component={NotFound} />
           </Switch>
         </HashRouter>
-      </I18nProvider>
     );
   }
 

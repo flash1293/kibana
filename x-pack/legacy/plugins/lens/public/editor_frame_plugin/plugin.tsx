@@ -62,7 +62,6 @@ export class EditorFramePlugin {
           const firstVisualizationId = Object.keys(this.visualizations)[0];
 
           render(
-            <I18nProvider>
               <EditorFrame
                 data-test-subj="lnsEditorFrame"
                 onError={onError}
@@ -77,8 +76,7 @@ export class EditorFramePlugin {
                 dateRange={dateRange}
                 query={query}
                 onChange={onChange}
-              />
-            </I18nProvider>,
+              />,
             domElement
           );
         },

@@ -20,6 +20,7 @@ import { Document } from '../../persistence/saved_object_store';
 import { getSavedObjectFormat } from './save';
 import { WorkspacePanelWrapper } from './workspace_panel_wrapper';
 import { generateId } from '../../id_generator';
+import { I18nProvider } from '@kbn/i18n/react';
 
 export interface EditorFrameProps {
   doc?: Document;
@@ -205,67 +206,71 @@ export function EditorFrame(props: EditorFrameProps) {
   }, [state.datasourceStates, state.visualization, props.query, props.dateRange, state.title]);
 
   return (
-    <FrameLayout
-      dataPanel={
-        <DataPanelWrapper
-          datasourceMap={props.datasourceMap}
-          activeDatasource={state.activeDatasourceId}
-          datasourceState={
-            state.activeDatasourceId ? state.datasourceStates[state.activeDatasourceId].state : null
-          }
-          datasourceIsLoading={
-            state.activeDatasourceId
-              ? state.datasourceStates[state.activeDatasourceId].isLoading
-              : true
-          }
-          dispatch={dispatch}
-        />
-      }
-      configPanel={
-        allLoaded && (
-          <ConfigPanelWrapper
+    <I18nProvider>
+      <FrameLayout
+        dataPanel={
+          <DataPanelWrapper
             datasourceMap={props.datasourceMap}
-            datasourceStates={state.datasourceStates}
-            visualizationMap={props.visualizationMap}
-            activeVisualizationId={state.visualization.activeId}
+            activeDatasource={state.activeDatasourceId}
+            datasourceState={
+              state.activeDatasourceId
+                ? state.datasourceStates[state.activeDatasourceId].state
+                : null
+            }
+            datasourceIsLoading={
+              state.activeDatasourceId
+                ? state.datasourceStates[state.activeDatasourceId].isLoading
+                : true
+            }
             dispatch={dispatch}
-            visualizationState={state.visualization.state}
-            framePublicAPI={framePublicAPI}
           />
-        )
-      }
-      workspacePanel={
-        allLoaded && (
-          <WorkspacePanelWrapper title={state.title} dispatch={dispatch}>
-            <WorkspacePanel
+        }
+        configPanel={
+          allLoaded && (
+            <ConfigPanelWrapper
+              datasourceMap={props.datasourceMap}
+              datasourceStates={state.datasourceStates}
+              visualizationMap={props.visualizationMap}
+              activeVisualizationId={state.visualization.activeId}
+              dispatch={dispatch}
+              visualizationState={state.visualization.state}
+              framePublicAPI={framePublicAPI}
+            />
+          )
+        }
+        workspacePanel={
+          allLoaded && (
+            <WorkspacePanelWrapper title={state.title} dispatch={dispatch}>
+              <WorkspacePanel
+                activeDatasourceId={state.activeDatasourceId}
+                activeVisualizationId={state.visualization.activeId}
+                datasourceMap={props.datasourceMap}
+                datasourceStates={state.datasourceStates}
+                framePublicAPI={framePublicAPI}
+                visualizationState={state.visualization.state}
+                visualizationMap={props.visualizationMap}
+                dispatch={dispatch}
+                ExpressionRenderer={props.ExpressionRenderer}
+              />
+            </WorkspacePanelWrapper>
+          )
+        }
+        suggestionsPanel={
+          allLoaded && (
+            <SuggestionPanel
+              frame={framePublicAPI}
               activeDatasourceId={state.activeDatasourceId}
               activeVisualizationId={state.visualization.activeId}
               datasourceMap={props.datasourceMap}
               datasourceStates={state.datasourceStates}
-              framePublicAPI={framePublicAPI}
               visualizationState={state.visualization.state}
               visualizationMap={props.visualizationMap}
               dispatch={dispatch}
               ExpressionRenderer={props.ExpressionRenderer}
             />
-          </WorkspacePanelWrapper>
-        )
-      }
-      suggestionsPanel={
-        allLoaded && (
-          <SuggestionPanel
-            frame={framePublicAPI}
-            activeDatasourceId={state.activeDatasourceId}
-            activeVisualizationId={state.visualization.activeId}
-            datasourceMap={props.datasourceMap}
-            datasourceStates={state.datasourceStates}
-            visualizationState={state.visualization.state}
-            visualizationMap={props.visualizationMap}
-            dispatch={dispatch}
-            ExpressionRenderer={props.ExpressionRenderer}
-          />
-        )
-      }
-    />
+          )
+        }
+      />
+    </I18nProvider>
   );
 }

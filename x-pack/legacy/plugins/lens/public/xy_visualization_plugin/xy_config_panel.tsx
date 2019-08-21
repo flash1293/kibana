@@ -126,6 +126,7 @@ function LayerSettings({
 export function XYConfigPanel(props: VisualizationProps<State>) {
   const { state, setState, frame } = props;
   const [isChartOptionsOpen, setIsChartOptionsOpen] = useState(false);
+  console.log('render xy coinfig panel');
 
   return (
     <EuiForm className="lnsConfigPanel">
@@ -201,6 +202,7 @@ export function XYConfigPanel(props: VisualizationProps<State>) {
               defaultMessage: 'X-axis',
             })}
           >
+            <div>
             <NativeRenderer
               data-test-subj="lnsXY_xDimensionPanel"
               render={props.frame.datasourceLayers[layer.layerId].renderDimensionPanel}
@@ -211,7 +213,7 @@ export function XYConfigPanel(props: VisualizationProps<State>) {
                 suggestedPriority: 1,
                 layerId: layer.layerId,
               }}
-            />
+            /></div>
           </EuiFormRow>
           <EuiFormRow
             className="lnsConfigPanel__axis"

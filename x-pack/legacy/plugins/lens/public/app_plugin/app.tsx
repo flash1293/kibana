@@ -5,16 +5,17 @@
  */
 
 import _ from 'lodash';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
 import { I18nProvider } from '@kbn/i18n/react';
 import { i18n } from '@kbn/i18n';
 import { EuiLink, EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
 import { Storage } from 'ui/storage';
 import { toastNotifications } from 'ui/notify';
 import { Chrome } from 'ui/chrome';
+import { UiSettingsClient } from 'src/core/public';
 import { Query, QueryBar } from '../../../../../../src/legacy/core_plugins/data/public/query';
 import { Document, SavedObjectStore } from '../persistence';
-import { EditorFrameInstance } from '../types';
+import { EditorFrameInstance, EditorFrameProps } from '../types';
 import { NativeRenderer } from '../native_renderer';
 
 interface State {
@@ -104,9 +105,48 @@ export function App({
     []
   );
 
+  const onSubmit = useMemo(() => {
+    console.log('new submit');
+    return ({
+      dateRange,
+      query,
+    }: {
+      dateRange: {
+        from: string;
+        to: string;
+      };
+      query?: Query | undefined;
+    }) => {
+      setState(oldState => ({
+        ...oldState,
+        dateRange: {
+          fromDate: dateRange.from,
+          toDate: dateRange.to,
+        },
+        query: query || state.query,
+      }));
+    };
+  }, [setState]);
+
+  const onChange = useMemo(() => {
+    console.log('new onchange');
+    return ({ indexPatternTitles, doc }: { indexPatternTitles: string[]; doc: Document }) => {
+      const indexPatternChange = !_.isEqual(state.indexPatternTitles, indexPatternTitles);
+      const docChange = !_.isEqual(state.persistedDoc, doc);
+      if (indexPatternChange || (docChange && state.persistedDoc)) {
+        setState(oldState => ({
+          ...oldState,
+          indexPatternTitles,
+          isDirty: docChange,
+        }));
+      }
+      lastKnownDocRef.current = doc;
+    };
+  }, [state.indexPatternTitles, setState, state.persistedDoc]);
+
   return (
-    <I18nProvider>
-      <div className="lnsApp">
+    <div className="lnsApp">
+      <I18nProvider>
         <div className="lnsAppHeader">
           <nav>
             <EuiFlexGroup>
@@ -149,56 +189,70 @@ export function App({
               </EuiFlexItem>
             </EuiFlexGroup>
           </nav>
-          <QueryBar
-            data-test-subj="lnsApp_queryBar"
-            screenTitle={'lens'}
-            onSubmit={({ dateRange, query }) => {
-              setState({
-                ...state,
-                dateRange: {
-                  fromDate: dateRange.from,
-                  toDate: dateRange.to,
-                },
-                query: query || state.query,
-              });
-            }}
-            appName={'lens'}
+          <MemoizedQuerBarWrapper
             indexPatterns={state.indexPatternTitles}
             store={store}
-            showDatePicker={true}
-            showQueryInput={true}
             query={state.query}
             dateRangeFrom={state.dateRange && state.dateRange.fromDate}
             dateRangeTo={state.dateRange && state.dateRange.toDate}
             uiSettings={uiSettings}
+            onSubmit={onSubmit}
           />
         </div>
+      </I18nProvider>
 
-        {(!state.isLoading || state.persistedDoc) && (
-          <NativeRenderer
-            className="lnsAppFrame"
-            render={editorFrame.mount}
-            nativeProps={{
-              dateRange: state.dateRange,
-              query: state.query,
-              doc: state.persistedDoc,
-              onError,
-              onChange: ({ indexPatternTitles, doc }) => {
-                const indexPatternChange = !_.isEqual(state.indexPatternTitles, indexPatternTitles);
-                const docChange = !_.isEqual(state.persistedDoc, doc);
-                if (indexPatternChange || docChange) {
-                  setState({
-                    ...state,
-                    indexPatternTitles,
-                    isDirty: docChange,
-                  });
-                }
-                lastKnownDocRef.current = doc;
-              },
-            }}
-          />
-        )}
-      </div>
-    </I18nProvider>
+      {(!state.isLoading || state.persistedDoc) && (
+        <MemoizedFrameWrapper
+          editorFrame={editorFrame}
+          nativeProps={{
+            dateRange: state.dateRange,
+            query: state.query,
+            doc: state.persistedDoc,
+            onError,
+            onChange,
+          }}
+        />
+      )}
+    </div>
   );
 }
+
+function FrameWrapper({
+  editorFrame,
+  nativeProps,
+}: {
+  editorFrame: EditorFrameInstance;
+  nativeProps: EditorFrameProps;
+}) {
+  return (
+    <NativeRenderer className="lnsAppFrame" render={editorFrame.mount} nativeProps={nativeProps} />
+  );
+}
+
+const MemoizedFrameWrapper = memo(FrameWrapper);
+
+function QueryBarWrapper(props: {
+  onSubmit: (payload: {
+    dateRange: { from: string; to: string };
+    query?: Query | undefined;
+  }) => void;
+  indexPatterns: string[];
+  store: Storage;
+  query: Query;
+  dateRangeFrom?: string;
+  dateRangeTo?: string;
+  uiSettings: UiSettingsClient;
+}) {
+  return (
+    <QueryBar
+      data-test-subj="lnsApp_queryBar"
+      screenTitle={'lens'}
+      appName={'lens'}
+      showDatePicker={true}
+      showQueryInput={true}
+      {...props}
+    />
+  );
+}
+
+const MemoizedQuerBarWrapper = memo(QueryBarWrapper);
