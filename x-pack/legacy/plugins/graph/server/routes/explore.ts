@@ -26,35 +26,36 @@ export async function initExploreRoute(setup: CoreSetup) {
     },
     async (context, req, res) => {
       const requestClient = context.core.elasticsearch.dataClient;
-  try {
-    return res.ok({
-      body: await requestClient.callAsCurrentUser('transport.request', {
-        'path': '/' + encodeURIComponent(req.body.index) + '/_graph/explore',
-        body: req.body.query,
-        method: 'POST',
-        query: {}
-      })
-    });
-  } catch (error) {
-    // Extract known reasons for bad choice of field
-    const relevantCause = [].concat(get(error, 'body.error.root_cause', []) || [])
-      .find(cause => {
-        return (
-          cause.reason.includes('Fielddata is disabled on text fields') ||
-          cause.reason.includes('No support for examining floating point') ||
-          cause.reason.includes('Sample diversifying key must be a single valued-field') ||
-          cause.reason.includes('Failed to parse query') ||
-          cause.type == 'parsing_exception'
-        );
-      });
+      try {
+        return res.ok({
+          body: (await requestClient.callAsCurrentUser('transport.request', {
+            path: '/' + encodeURIComponent(req.body.index) + '/_graph/explore',
+            body: req.body.query,
+            method: 'POST',
+            query: {},
+          })) as Promise<object>,
+        });
+      } catch (error) {
+        // Extract known reasons for bad choice of field
+        const relevantCause = (get(error, 'body.error.root_cause', []) as Array<{
+          reason: string;
+          type: string;
+        }>).find(cause => {
+          return (
+            cause.reason.includes('Fielddata is disabled on text fields') ||
+            cause.reason.includes('No support for examining floating point') ||
+            cause.reason.includes('Sample diversifying key must be a single valued-field') ||
+            cause.reason.includes('Failed to parse query') ||
+            cause.type == 'parsing_exception'
+          );
+        });
 
-    if (relevantCause) {
-      throw Boom.badRequest(relevantCause.reason);
-    }
+        if (relevantCause) {
+          throw Boom.badRequest(relevantCause.reason);
+        }
 
-    throw Boom.boomify(error);
-  }
-
+        throw Boom.boomify(error);
+      }
     }
   );
 }

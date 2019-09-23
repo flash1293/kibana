@@ -25,6 +25,7 @@ export async function initSearchRoute(setup: CoreSetup) {
     },
     async (context, req, res) => {
       const requestClient = context.core.elasticsearch.dataClient;
+      
       const includeFrozen = await req.getUiSettingsService().get('search:includeFrozen');
 
       try {

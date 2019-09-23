@@ -11,6 +11,7 @@ import { initSearchRoute } from './search';
 import { initExploreRoute } from './explore';
 
 export function setupRoutes(setup: CoreSetup) {
+  setup.context.createContextContainer().
   initSearchRoute(setup);
   initExploreRoute(setup);
 }
