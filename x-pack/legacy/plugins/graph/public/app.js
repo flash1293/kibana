@@ -66,7 +66,7 @@ import './angular/directives/graph_inspect';
 
 const app = uiModules.get('app/graph');
 
-function checkLicense(Promise, kbnBaseUrl) {
+function checkLicense(kbnBaseUrl) {
   const licenseAllowsToShowThisPage = xpackInfo.get('features.graph.showAppLink') &&
     xpackInfo.get('features.graph.enableAppLink');
   if (!licenseAllowsToShowThisPage) {
@@ -127,7 +127,7 @@ uiRoutes
     template: listingTemplate,
     badge: getReadonlyBadge,
     controller($injector, $location, $scope, Private, config, Promise, kbnBaseUrl) {
-      checkLicense(Promise, kbnBaseUrl);
+      checkLicense(kbnBaseUrl);
       const services = Private(SavedObjectRegistryProvider).byLoaderPropertiesName;
       const graphService = services['Graph workspace'];
       const kbnUrl = $injector.get('kbnUrl');
@@ -196,40 +196,30 @@ app.controller('graphuiPlugin', function (
   $route,
   $http,
   kbnUrl,
-  Promise,
   confirmModal,
   kbnBaseUrl
 ) {
-  function handleSuccess(data) {
-    return checkLicense(Promise, kbnBaseUrl)
-      .then(() => data);
-  }
+  checkLicense(kbnBaseUrl);
 
   function handleError(err) {
-    return checkLicense(Promise, kbnBaseUrl)
-      .then(() => {
-        const toastTitle = i18n.translate('xpack.graph.errorToastTitle', {
-          defaultMessage: 'Graph Error',
-          description: '"Graph" is a product name and should not be translated.',
-        });
-        if (err instanceof Error) {
-          toastNotifications.addError(err, {
-            title: toastTitle,
-          });
-        } else {
-          toastNotifications.addDanger({
-            title: toastTitle,
-            text: String(err),
-          });
-        }
+    const toastTitle = i18n.translate('xpack.graph.errorToastTitle', {
+      defaultMessage: 'Graph Error',
+      description: '"Graph" is a product name and should not be translated.',
+    });
+    if (err instanceof Error) {
+      toastNotifications.addError(err, {
+        title: toastTitle,
       });
+    } else {
+      toastNotifications.addDanger({
+        title: toastTitle,
+        text: String(err),
+      });
+    }
   }
 
   function handleHttpError(error) {
-    return checkLicense(Promise, kbnBaseUrl)
-      .then(() => {
-        toastNotifications.addDanger(formatAngularHttpError(error));
-      });
+    toastNotifications.addDanger(formatAngularHttpError(error));
   }
 
   // Replacement function for graphClientWorkspace's comms so
