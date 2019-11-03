@@ -186,7 +186,7 @@ export function initGraphApp(angularModule, deps) {
 
 
   //========  Controller for basic UI ==================
-  app.controller('graphuiPlugin', function ($scope, $route, $location, confirmModal) {
+  app.controller('graphuiPlugin', function ($scope, $route, $location, $timeout, confirmModal) {
     checkLicense(kbnBaseUrl);
 
     function handleError(err) {
@@ -305,7 +305,9 @@ export function initGraphApp(angularModule, deps) {
         });
       },
       notifyAngular: () => {
-        $scope.$digest();
+        if (!$scope.$$phase) {
+          $scope.$digest();
+        }
       },
       chrome,
     });

@@ -132,11 +132,10 @@ export function GraphVisualization({
                     className={classNames('fa gphNode__text', {
                       'gphNode__text--inverse': isColorDark(...hexToRgb(node.color)),
                     })}
-                    transform="translate(0,5)"
                     textAnchor="middle"
                     x={0}
                     y={0}
-                    style={{ transform: `translate(${node.kx}px, ${node.ky}px)` }}
+                    style={{ transform: `translate(${node.kx}px, ${node.ky + 5}px)` }}
                   >
                     {node.icon.code}
                   </text>
@@ -146,10 +145,9 @@ export function GraphVisualization({
                   <text
                     className="gphNode__label"
                     textAnchor="middle"
-                    transform="translate(0,22)"
                     x={0}
                     y={0}
-                    style={{ transform: `translate(${node.kx}px, ${node.ky}px)` }}
+                    style={{ transform: `translate(${node.kx}px, ${node.ky + 22}px)` }}
                   >
                     {node.label}
                   </text>

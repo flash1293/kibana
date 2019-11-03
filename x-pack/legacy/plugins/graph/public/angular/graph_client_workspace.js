@@ -87,6 +87,10 @@ module.exports = (function () {
     self.orphan = orphan;
     self.undo = function () {
       self.orphan.parent = undefined;
+      orphan.x = parent.x;
+      orphan.y = parent.y;
+      orphan.kx = parent.kx;
+      orphan.ky = parent.ky;
     };
     self.redo = function () {
       self.orphan.parent = self.receiver;
@@ -102,6 +106,10 @@ module.exports = (function () {
     };
     self.redo = function () {
       self.child.parent = undefined;
+      child.x = parent.x;
+      child.y = parent.y;
+      child.kx = parent.kx;
+      child.ky = parent.ky;
     };
   }
 
@@ -511,9 +519,11 @@ module.exports = (function () {
 
     this.runLayout = function () {
       if (self.changeHandler) {
-        // Hook to allow any client to respond to position changes
-        // e.g. angular adjusts and repaints node positions on screen.
-        self.changeHandler();
+        setTimeout(() => {
+          // Hook to allow any client to respond to position changes
+          // e.g. angular adjusts and repaints node positions on screen.
+          self.changeHandler();
+        }, 0);
       }
       return;
       this.stopLayout();
@@ -670,6 +680,10 @@ module.exports = (function () {
       self.nodes.forEach(function (other) {
         if (other.parent == node) {
           other.parent = undefined;
+          other.kx = node.kx;
+          other.ky = node.ky;
+          other.x = node.x;
+          other.y = node.y;
           ops.push(new UnGroupOperation(node, other, self));
         }
       });
@@ -704,6 +718,31 @@ module.exports = (function () {
 
     };
 
+    this.getMeanCoordinate = function () {
+      if (self.nodes.length === 0) {
+        return {
+          x: 800 / 2,
+          y: 800 / 2,
+          kx: 600 / 2,
+          ky: 600 / 2,
+        };
+      }
+      let x = 0;
+      let y = 0;
+      let kx = 0;
+      let ky = 0;
+      self.nodes.forEach((node) => {
+        x += node.x;
+        y += node.y;
+        kx += node.kx;
+        ky += node.ky;
+      });
+      x = x / self.nodes.length;
+      y = y / self.nodes.length;
+      kx = kx / self.nodes.length;
+      ky = ky / self.nodes.length;
+      return {x, y, kx, ky };
+    }
 
 
     // A "simple search" operation that requires no parameters from the client.
@@ -866,8 +905,10 @@ module.exports = (function () {
         }
 
         const node = {
-          x: 1,
-          y: 1,
+          x: dedupedNode.x,
+          y: dedupedNode.y,
+          kx: dedupedNode.kx,
+          ky: dedupedNode.ky,
           numChildren: 0,
           parent: undefined,
           isSelected: false,
@@ -1086,6 +1127,12 @@ module.exports = (function () {
               node.color = fieldDef.color;
               node.icon = fieldDef.icon;
               node.fieldDef = fieldDef;
+              if (startNodes.length) {
+                node.x = startNodes[0].x;
+                node.y = startNodes[0].y;
+                node.kx = startNodes[0].kx;
+                node.ky = startNodes[0].ky;
+              }
               break;
             }
           }
@@ -1600,6 +1647,7 @@ module.exports = (function () {
       graphExplorer(self.options.indexName, request, function (data) {
         self.lastResponse = JSON.stringify(data, null, '\t');
         const nodes = [];
+        const meanCoordinate = self.getMeanCoordinate();
         const edges = [];
         //Label the nodes with field number for CSS styling
         for (const n in data.vertices) {
@@ -1610,6 +1658,10 @@ module.exports = (function () {
               node.color = fieldDef.color;
               node.icon = fieldDef.icon;
               node.fieldDef = fieldDef;
+              node.x = meanCoordinate.x;
+              node.y = meanCoordinate.y;
+              node.kx = meanCoordinate.kx;
+              node.ky = meanCoordinate.ky;
               break;
             }
           }

@@ -117,15 +117,17 @@ export const layoutingSaga = ({ getWorkspace, notifyAngular }: GraphStoreDepende
         node.numChildren = node.numChildren + 1;
       }
     }
-    console.log(visibleNodes);
-    console.log(effectiveEdges);
+    // notify angular to get the current position of nodes on the screen,
+    // then animate them
+    yield call(() => new Promise(resolve => { setTimeout(resolve, 0); }));
+    notifyAngular();
     const force = d3.layout.force()
       .nodes(visibleNodes)
       .links(effectiveEdges)
       .friction(0.8)
       .linkDistance(100)
       .charge(-1500)
-      .gravity(0.15)
+      .gravity(0.35)
       .theta(0.99)
       .alpha(0.5)
       .size([800, 600])
@@ -164,14 +166,15 @@ export const layoutingSaga = ({ getWorkspace, notifyAngular }: GraphStoreDepende
       });
     force.start();
     let safety = 0;
-    while(force.alpha() > 0.05) { // You'll want to try out different, "small" values for this
+    while(force.alpha() > 0.01) { // You'll want to try out different, "small" values for this
       force.tick();
-      if(safety++ > 500) {
+      if(safety++ > 2000) {
         break;// Avoids infinite looping in case this solution was a bad idea
       }
     }
     force.stop();
 
+    yield call(() => new Promise(resolve => { setTimeout(resolve, 0); }));
     notifyAngular();
   }
   return function*() {
