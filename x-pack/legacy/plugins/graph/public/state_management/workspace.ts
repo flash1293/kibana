@@ -4,16 +4,19 @@
  * you may not use this file except in compliance with the Elastic License.
  */
 
+const d3 = require('d3');
 import actionCreatorFactory from 'typescript-fsa';
 import { i18n } from '@kbn/i18n';
-import { takeLatest, select, call } from 'redux-saga/effects';
+import { takeLatest, select, call, takeEvery } from 'redux-saga/effects';
 import { GraphStoreDependencies, GraphState } from '.';
 import { datasourceSelector } from './datasource';
 import { selectedFieldsSelector } from './fields';
 import { fetchTopNodes } from '../services/fetch_top_nodes';
+import { matchesOne } from './helpers';
 const actionCreator = actionCreatorFactory('x-pack/graph');
 
 export const fillWorkspace = actionCreator<void>('FILL_WORKSPACE');
+export const changeWorkspace = actionCreator<void>('CHANGE_WORKSPACE');
 
 /**
  * Saga handling filling in top terms into workspace.
@@ -62,5 +65,116 @@ export const fillWorkspaceSaga = ({
 
   return function*() {
     yield takeLatest(fillWorkspace.match, fetchNodes);
+  };
+};
+
+export const layoutingSaga = ({ getWorkspace, notifyAngular }: GraphStoreDependencies) => {
+  function* layoutGraph(): IterableIterator<unknown> {
+    const workspace = getWorkspace();
+    if (!workspace) {
+      return;
+    }
+
+
+    // The set of nodes and edges we present to the d3 layout algorithms
+    // is potentially a reduced set of nodes if the client has used any
+    // grouping of nodes into parent nodes.
+    const effectiveEdges: any[] = [];
+    const edges = workspace.edges;
+    for (const e in edges) {
+      const edge = edges[e];
+      let topSrc: any = edge.source;
+      let topTarget: any = edge.target;
+      while (topSrc.parent != undefined) {
+        topSrc = topSrc.parent;
+      }
+      while (topTarget.parent != undefined) {
+        topTarget = topTarget.parent;
+      }
+      edge.topSrc = topSrc;
+      edge.topTarget = topTarget;
+
+      if (topSrc != topTarget) {
+        effectiveEdges.push({
+          source: topSrc,
+          target: topTarget
+        });
+      }
+    }
+    const visibleNodes = workspace.nodes.filter(function (n) {
+      return n.parent == undefined;
+    });
+    //reset then roll-up all the counts
+    const allNodes = workspace.nodes;
+    for (const n in allNodes) {
+      const node = allNodes[n];
+      node.numChildren = 0;
+    }
+    for (const n in allNodes) {
+      let node = allNodes[n];
+      while (node.parent != undefined) {
+        node = node.parent;
+        node.numChildren = node.numChildren + 1;
+      }
+    }
+    console.log(visibleNodes);
+    console.log(effectiveEdges);
+    const force = d3.layout.force()
+      .nodes(visibleNodes)
+      .links(effectiveEdges)
+      .friction(0.8)
+      .linkDistance(100)
+      .charge(-1500)
+      .gravity(0.15)
+      .theta(0.99)
+      .alpha(0.5)
+      .size([800, 600])
+      .on('tick', function (e) {
+        const nodeArray = workspace.nodes;
+        let hasRollups = false;
+        //Update the position of all "top level nodes"
+        for (const i in nodeArray) {
+          const n = nodeArray[i];
+          //Code to support roll-ups
+          if (n.parent == undefined) {
+            n.kx = n.x;
+            n.ky = n.y;
+          } else {
+            hasRollups = true;
+          }
+        }
+        if (hasRollups) {
+          for (const i in nodeArray) {
+            const n = nodeArray[i];
+            //Code to support roll-ups
+            if (n.parent != undefined) {
+              // Is a grouped node - inherit parent's position so edges point into parent
+              // d3 thinks it has moved it to x and y but we have final say using kx and ky.
+              let topLevelNode = n.parent;
+              while (topLevelNode.parent != undefined) {
+                topLevelNode = topLevelNode.parent;
+              }
+
+              n.kx = topLevelNode.x;
+              n.ky = topLevelNode.y;
+            }
+          }
+
+        }
+      });
+    force.start();
+    let safety = 0;
+    while(force.alpha() > 0.05) { // You'll want to try out different, "small" values for this
+      force.tick();
+      if(safety++ > 500) {
+        break;// Avoids infinite looping in case this solution was a bad idea
+      }
+    }
+    force.stop();
+
+    notifyAngular();
+  }
+  return function*() {
+    yield takeEvery(matchesOne(changeWorkspace), layoutGraph);
   };
 };

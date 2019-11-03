@@ -35,9 +35,10 @@ import {
 } from './helpers/as_observable';
 import { colorChoices } from './helpers/style_choices';
 import {
+  changeWorkspace,
   createGraphStore,
   datasourceSelector,
-  hasFieldsSelector
+  hasFieldsSelector,
 } from './state_management';
 
 export function initGraphApp(angularModule, deps) {
@@ -269,6 +270,7 @@ export function initGraphApp(angularModule, deps) {
             //   console.log(newNodes);
           },
           changeHandler: function () {
+            store.dispatch(changeWorkspace());
             //Allows DOM to update with graph layout changes.
             $scope.$apply();
           },
