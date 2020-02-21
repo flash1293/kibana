@@ -56,7 +56,7 @@ export default function({ getService, getPageObjects }: FtrProviderContext) {
         'Vertical Bar',
       ];
       if (!isOss) {
-        expectedChartTypes.push('Maps', 'Lens');
+        expectedChartTypes.push('Maps');
         expectedChartTypes = _.remove(expectedChartTypes, function(n) {
           return n !== 'Coordinate Map';
         });
@@ -64,6 +64,8 @@ export default function({ getService, getPageObjects }: FtrProviderContext) {
           return n !== 'Region Map';
         });
         expectedChartTypes.sort();
+        // Lens is always the first visualization
+        expectedChartTypes.unshift('Lens');
       }
       log.debug('oss= ' + isOss);
 
