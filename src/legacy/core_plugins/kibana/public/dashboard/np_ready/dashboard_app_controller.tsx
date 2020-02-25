@@ -26,6 +26,8 @@ import angular from 'angular';
 import { Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { History } from 'history';
+import { parse } from 'url';
+
 import { SavedObjectSaveOpts } from 'src/plugins/saved_objects/public';
 import { DashboardEmptyScreen, DashboardEmptyScreenProps } from './dashboard_empty_screen';
 
@@ -713,8 +715,44 @@ export class DashboardAppController {
         });
     }
 
+    const hasUrlParam = (param: string): boolean =>
+      param in parse(location.hash.slice(1), true).query;
+
+    const displayIfUrlParam = (param: string): boolean =>
+      hasUrlParam(param) && !dashboardStateManager.getFullScreenMode();
+
+    const topNavUpdate = (): void => {
+      $scope.topNavMenu = $scope.showTopNavMenu()
+        ? getTopNavConfig(
+            dashboardStateManager.getViewMode(),
+            navActions,
+            dashboardConfig.getHideWriteControls()
+          )
+        : null;
+    };
+
+    $scope.$watch(
+      (): boolean => $scope.showTopNavMenu(),
+      (): void => topNavUpdate()
+    );
+
+    $scope.showTopNav = () => $scope.isVisible || $scope.showSearchBar();
+
+    $scope.showTopNavMenu = () => $scope.isVisible || displayIfUrlParam('show-top-nav-menu');
+
+    $scope.showSearchBar = () =>
+      $scope.isVisible || $scope.showQueryBar() || $scope.showFilterBar();
+
+    $scope.showQueryBar = () =>
+      $scope.isVisible || $scope.showQueryInput() || $scope.showDatePicker();
+
+    $scope.showQueryInput = () => $scope.isVisible || displayIfUrlParam('show-query-input');
+
+    $scope.showDatePicker = () => $scope.isVisible || displayIfUrlParam('show-date-picker');
+
     $scope.showFilterBar = () =>
-      $scope.model.filters.length > 0 || !dashboardStateManager.getFullScreenMode();
+      ($scope.model.filters.length > 0 || !dashboardStateManager.getFullScreenMode()) &&
+      !hasUrlParam('hide-filter-bar');
 
     $scope.showAddPanel = () => {
       dashboardStateManager.setFullScreenMode(false);
@@ -888,14 +926,8 @@ export class DashboardAppController {
       });
     });
 
-    dashboardStateManager.registerChangeListener(() => {
-      // view mode could have changed, so trigger top nav update
-      $scope.topNavMenu = getTopNavConfig(
-        dashboardStateManager.getViewMode(),
-        navActions,
-        dashboardConfig.getHideWriteControls()
-      );
-    });
+    // view mode could have changed, so trigger top nav update
+    dashboardStateManager.registerChangeListener(topNavUpdate);
 
     $scope.$on('$destroy', () => {
       updateSubscription.unsubscribe();

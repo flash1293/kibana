@@ -4,13 +4,17 @@
 >
   <!-- Local nav. -->
   <kbn-top-nav
-    ng-show="isVisible"
+    ng-show="showTopNav()"
     app-name="'dashboard'"
     config="topNavMenu"
 
-    show-search-bar="isVisible"
-    show-filter-bar="showFilterBar()"
+    show-top-nav-menu="showTopNavMenu()"
+    show-search-bar="showSearchBar()"
+    show-query-bar="showQueryBar()"
+    show-query-input="showQueryInput()"
     show-save-query="showSaveQuery"
+    show-date-picker="showDatePicker()"
+    show-filter-bar="showFilterBar()"
 
     query="model.query"
     saved-query="savedQuery"
@@ -27,25 +31,6 @@
     on-saved-query-updated="onSavedQueryUpdated"
     on-clear-saved-query="onClearSavedQuery"
     on-refresh-change="onRefreshChange">
-  </kbn-top-nav>
-
-  <!--
-  The top nav is hidden in embed mode but the filter bar must still be present so
-  we show the filter bar on its own here if the chrome is not visible.
--->
-  <kbn-top-nav
-    ng-if="showFilterBar() && !isVisible"
-
-    app-name="'dashboard'"
-    show-search-bar="true"
-    show-filter-bar="true"
-    show-save-query="false"
-    show-date-picker="false"
-
-    filters="model.filters"
-    index-patterns="indexPatterns"
-    on-filters-updated="onFiltersUpdated"
-  >
   </kbn-top-nav>
 
   <h1 class="euiScreenReaderOnly">{{screenTitle}}</h1>

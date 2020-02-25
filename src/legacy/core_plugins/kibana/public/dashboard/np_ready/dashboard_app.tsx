@@ -76,6 +76,12 @@ export interface DashboardAppScope extends ng.IScope {
   onSavedQueryUpdated: (savedQuery: SavedQuery) => void;
   onClearSavedQuery: () => void;
   topNavMenu: any;
+  showTopNav: () => boolean;
+  showTopNavMenu: () => boolean;
+  showSearchBar: () => boolean;
+  showQueryBar: () => boolean;
+  showQueryInput: () => boolean;
+  showDatePicker: () => boolean;
   showFilterBar: () => boolean;
   showAddPanel: any;
   showSaveQuery: boolean;

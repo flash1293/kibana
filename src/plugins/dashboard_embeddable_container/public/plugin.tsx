@@ -70,6 +70,7 @@ export class DashboardEmbeddableContainerPublicPlugin
     };
 
     const ExitFullScreenButton: React.FC<ExitFullScreenButtonProps> = props => {
+      // TODO: Only call useHideChrome if chrome is visible
       useHideChrome();
       return <ExitFullScreenButtonUi {...props} />;
     };

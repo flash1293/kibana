@@ -24,6 +24,10 @@ import { shallow } from 'enzyme';
 
 import { UrlPanelContent } from './url_panel_content';
 
+const TOP_NAV_MENU_SWITCH_SELECTOR = '[data-test-subj="topNavMenuSwitch"]';
+const QUERY_INPUT_SWITCH_SELECTOR = '[data-test-subj="queryInputSwitch"]';
+const DATE_PICKER_SWITCH_SELECTOR = '[data-test-subj="datePickerSwitch"]';
+const FILTER_BAR_SWITCH_SELECTOR = '[data-test-subj="filterBarSwitch"]';
 const defaultProps = {
   allowShortUrl: true,
   objectType: 'dashboard',
@@ -45,5 +49,23 @@ test('should hide short url section when allowShortUrl is false', () => {
   const component = shallow(
     <UrlPanelContent {...defaultProps} allowShortUrl={false} objectId="id1" />
   );
+  expect(component).toMatchSnapshot();
+});
+
+test('should show embedded option switches when embedded link', () => {
+  const component = shallow(<UrlPanelContent {...defaultProps} isEmbedded={true} objectId="id1" />);
+  expect(component.find(TOP_NAV_MENU_SWITCH_SELECTOR).length).toBe(1);
+  expect(component.find(QUERY_INPUT_SWITCH_SELECTOR).length).toBe(1);
+  expect(component.find(DATE_PICKER_SWITCH_SELECTOR).length).toBe(1);
+  expect(component.find(FILTER_BAR_SWITCH_SELECTOR).length).toBe(1);
+  expect(component).toMatchSnapshot();
+});
+
+test('should not show embedded option switches when permalink', () => {
+  const component = shallow(<UrlPanelContent {...defaultProps} objectId="id1" />);
+  expect(component.find(TOP_NAV_MENU_SWITCH_SELECTOR).length).toBe(0);
+  expect(component.find(QUERY_INPUT_SWITCH_SELECTOR).length).toBe(0);
+  expect(component.find(DATE_PICKER_SWITCH_SELECTOR).length).toBe(0);
+  expect(component.find(FILTER_BAR_SWITCH_SELECTOR).length).toBe(0);
   expect(component).toMatchSnapshot();
 });
