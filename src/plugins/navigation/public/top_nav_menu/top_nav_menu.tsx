@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import React from 'react';
+import React, { ReactElement } from 'react';
 
 import { EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
 
@@ -27,6 +27,7 @@ import { StatefulSearchBarProps, DataPublicPluginStart } from '../../../data/pub
 
 export type TopNavMenuProps = StatefulSearchBarProps & {
   config?: TopNavMenuData[];
+  showTopNavMenu?: boolean;
   showSearchBar?: boolean;
   data?: DataPublicPluginStart;
 };
@@ -40,8 +41,13 @@ export type TopNavMenuProps = StatefulSearchBarProps & {
  *
  **/
 
-export function TopNavMenu(props: TopNavMenuProps) {
-  const { config, showSearchBar, ...searchBarProps } = props;
+export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
+  const { config, showTopNavMenu, showSearchBar, ...searchBarProps } = props;
+
+  if (!showTopNavMenu && (!showSearchBar || !props.data)) {
+    return null;
+  }
+
   function renderItems() {
     if (!config) return;
     return config.map((menuItem: TopNavMenuData, i: number) => {
@@ -51,6 +57,21 @@ export function TopNavMenu(props: TopNavMenuProps) {
         </EuiFlexItem>
       );
     });
+  }
+
+  function renderMenu() {
+    if (!showTopNavMenu) return;
+    return (
+      <EuiFlexGroup
+        data-test-subj="top-nav"
+        justifyContent="flexStart"
+        gutterSize="none"
+        className="kbnTopNavMenu"
+        responsive={false}
+      >
+        {renderItems()}
+      </EuiFlexGroup>
+    );
   }
 
   function renderSearchBar() {
@@ -63,15 +84,7 @@ export function TopNavMenu(props: TopNavMenuProps) {
   function renderLayout() {
     return (
       <span className="kbnTopNavMenu__wrapper">
-        <EuiFlexGroup
-          data-test-subj="top-nav"
-          justifyContent="flexStart"
-          gutterSize="none"
-          className="kbnTopNavMenu"
-          responsive={false}
-        >
-          {renderItems()}
-        </EuiFlexGroup>
+        {renderMenu()}
         {renderSearchBar()}
       </span>
     );
@@ -81,6 +94,7 @@ export function TopNavMenu(props: TopNavMenuProps) {
 }
 
 TopNavMenu.defaultProps = {
+  showTopNavMenu: true,
   showSearchBar: false,
   showQueryBar: true,
   showQueryInput: true,
