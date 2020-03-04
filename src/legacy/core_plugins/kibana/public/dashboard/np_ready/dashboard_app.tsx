@@ -20,6 +20,7 @@
 import moment from 'moment';
 import { Subscription } from 'rxjs';
 import { History } from 'history';
+import { FlexGroupJustifyContent } from '@elastic/eui/src/components/flex/flex_group';
 
 import { IInjector } from '../legacy_imports';
 
@@ -83,6 +84,7 @@ export interface DashboardAppScope extends ng.IScope {
   showQueryInput: () => boolean;
   showDatePicker: () => boolean;
   showFilterBar: () => boolean;
+  justifyContent: FlexGroupJustifyContent;
   showAddPanel: any;
   showSaveQuery: boolean;
   kbnTopNav: any;

@@ -783,6 +783,8 @@ export class DashboardAppController {
       ($scope.model.filters.length > 0 || !dashboardStateManager.getFullScreenMode()) &&
       !Boolean($routeParams['hide-filter-bar']);
 
+    $scope.justifyContent = Boolean($routeParams.embed) ? 'flexStart' : 'flexEnd';
+
     $scope.showAddPanel = () => {
       dashboardStateManager.setFullScreenMode(false);
       /*
