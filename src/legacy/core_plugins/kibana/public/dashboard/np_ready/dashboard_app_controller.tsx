@@ -26,7 +26,6 @@ import angular from 'angular';
 import { Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { History } from 'history';
-import { parse } from 'url';
 
 import { SavedObjectSaveOpts } from 'src/plugins/saved_objects/public';
 import { DashboardEmptyScreen, DashboardEmptyScreenProps } from './dashboard_empty_screen';
@@ -747,11 +746,9 @@ export class DashboardAppController {
         });
     }
 
-    const hasUrlParam = (param: string): boolean =>
-      param in parse(location.hash.slice(1), true).query;
-
-    const displayIfUrlParam = (param: string): boolean =>
-      hasUrlParam(param) && !dashboardStateManager.getFullScreenMode();
+    const displaySection = (urlParam: string): boolean =>
+      $scope.isVisible ||
+      (Boolean($routeParams[urlParam]) && !dashboardStateManager.getFullScreenMode());
 
     const topNavUpdate = (): void => {
       $scope.topNavMenu = $scope.showTopNavMenu()
@@ -770,7 +767,7 @@ export class DashboardAppController {
 
     $scope.showTopNav = () => $scope.isVisible || $scope.showSearchBar();
 
-    $scope.showTopNavMenu = () => $scope.isVisible || displayIfUrlParam('show-top-nav-menu');
+    $scope.showTopNavMenu = () => displaySection('show-top-nav-menu');
 
     $scope.showSearchBar = () =>
       $scope.isVisible || $scope.showQueryBar() || $scope.showFilterBar();
@@ -778,13 +775,13 @@ export class DashboardAppController {
     $scope.showQueryBar = () =>
       $scope.isVisible || $scope.showQueryInput() || $scope.showDatePicker();
 
-    $scope.showQueryInput = () => $scope.isVisible || displayIfUrlParam('show-query-input');
+    $scope.showQueryInput = () => displaySection('show-query-input');
 
-    $scope.showDatePicker = () => $scope.isVisible || displayIfUrlParam('show-date-picker');
+    $scope.showDatePicker = () => displaySection('show-date-picker');
 
     $scope.showFilterBar = () =>
       ($scope.model.filters.length > 0 || !dashboardStateManager.getFullScreenMode()) &&
-      !hasUrlParam('hide-filter-bar');
+      !Boolean($routeParams['hide-filter-bar']);
 
     $scope.showAddPanel = () => {
       dashboardStateManager.setFullScreenMode(false);
