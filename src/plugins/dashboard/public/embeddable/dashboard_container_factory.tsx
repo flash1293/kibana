@@ -68,6 +68,7 @@ export class DashboardContainerFactory extends EmbeddableFactory<
   public getDefaultInput(): Partial<DashboardContainerInput> {
     return {
       panels: {},
+      isEmbedded: false,
       isFullScreenMode: false,
       useMargins: true,
     };

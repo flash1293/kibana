@@ -92,6 +92,7 @@ export const dashboardInput: DashboardContainerInput = {
       savedObjectId: 'be5accf0-3dca-11e8-8660-4d65aa086b3c',
     },
   },
+  isEmbedded: false,
   isFullScreenMode: false,
   filters: [],
   useMargins: true,
