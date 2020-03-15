@@ -27,7 +27,6 @@ import { StatefulSearchBarProps, DataPublicPluginStart } from '../../../data/pub
 
 export type TopNavMenuProps = StatefulSearchBarProps & {
   config?: TopNavMenuData[];
-  showTopNavMenu?: boolean;
   showSearchBar?: boolean;
   data?: DataPublicPluginStart;
 };
@@ -42,14 +41,14 @@ export type TopNavMenuProps = StatefulSearchBarProps & {
  **/
 
 export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
-  const { config, showTopNavMenu, showSearchBar, ...searchBarProps } = props;
+  const { config, showSearchBar, ...searchBarProps } = props;
 
-  if (!showTopNavMenu && (!showSearchBar || !props.data)) {
+  if ((!config || config.length === 0) && (!showSearchBar || !props.data)) {
     return null;
   }
 
   function renderItems() {
-    if (!config) return;
+    if (!config || config.length === 0) return;
     return config.map((menuItem: TopNavMenuData, i: number) => {
       return (
         <EuiFlexItem grow={false} key={`nav-menu-${i}`}>
@@ -60,7 +59,7 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
   }
 
   function renderMenu() {
-    if (!showTopNavMenu) return;
+    if (!config || config.length === 0) return;
     return (
       <EuiFlexGroup
         data-test-subj="top-nav"
@@ -94,7 +93,6 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
 }
 
 TopNavMenu.defaultProps = {
-  showTopNavMenu: true,
   showSearchBar: false,
   showQueryBar: true,
   showQueryInput: true,
