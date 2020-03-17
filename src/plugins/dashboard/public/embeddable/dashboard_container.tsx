@@ -53,7 +53,7 @@ export interface DashboardContainerInput extends ContainerInput {
   useMargins: boolean;
   title: string;
   description?: string;
-  isEmbedded: boolean;
+  isEmbeddedExternally: boolean;
   isFullScreenMode: boolean;
   panels: {
     [panelId: string]: DashboardPanelState;
@@ -101,7 +101,7 @@ export class DashboardContainer extends Container<InheritedChildInput, Dashboard
     super(
       {
         panels: {},
-        isEmbedded: false,
+        isEmbeddedExternally: false,
         isFullScreenMode: false,
         filters: [],
         useMargins: true,
