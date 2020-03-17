@@ -767,7 +767,7 @@ export class DashboardAppController {
 
     $scope.showTopNav = () => $scope.isVisible || $scope.showSearchBar();
 
-    $scope.showTopNavMenu = () => displaySection('show-top-nav-menu');
+    $scope.showTopNavMenu = () => displaySection('show-top-menu');
 
     $scope.showSearchBar = () =>
       $scope.isVisible || $scope.showQueryBar() || $scope.showFilterBar();
@@ -777,7 +777,7 @@ export class DashboardAppController {
 
     $scope.showQueryInput = () => displaySection('show-query-input');
 
-    $scope.showDatePicker = () => displaySection('show-date-picker');
+    $scope.showDatePicker = () => displaySection('show-time-filter');
 
     $scope.showFilterBar = () =>
       ($scope.model.filters.length > 0 || !dashboardStateManager.getFullScreenMode()) &&
