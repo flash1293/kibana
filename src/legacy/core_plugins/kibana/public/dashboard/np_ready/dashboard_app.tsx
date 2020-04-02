@@ -22,10 +22,8 @@ import { Subscription } from 'rxjs';
 import { History } from 'history';
 import { FlexGroupJustifyContent } from '@elastic/eui/src/components/flex/flex_group';
 
-import { IInjector } from '../legacy_imports';
-
-import { ViewMode } from '../../../../embeddable_api/public/np_ready/public';
-import { SavedObjectDashboard } from '../saved_dashboard/saved_dashboard';
+import { ViewMode } from '../../../../../../plugins/embeddable/public';
+import { SavedObjectDashboard } from '../../../../../../plugins/dashboard/public';
 import { DashboardAppState, SavedDashboardPanel } from './types';
 import {
   IIndexPattern,
@@ -94,28 +92,26 @@ export interface DashboardAppScope extends ng.IScope {
 }
 
 export function initDashboardAppDirective(app: any, deps: RenderDeps) {
-  app.directive('dashboardApp', function($injector: IInjector) {
-    return {
-      restrict: 'E',
-      controllerAs: 'dashboardApp',
-      controller: (
-        $scope: DashboardAppScope,
-        $route: any,
-        $routeParams: {
-          id?: string;
-        },
-        kbnUrlStateStorage: IKbnUrlStateStorage,
-        history: History
-      ) =>
-        new DashboardAppController({
-          $route,
-          $scope,
-          $routeParams,
-          indexPatterns: deps.data.indexPatterns,
-          kbnUrlStateStorage,
-          history,
-          ...deps,
-        }),
-    };
-  });
+  app.directive('dashboardApp', () => ({
+    restrict: 'E',
+    controllerAs: 'dashboardApp',
+    controller: (
+      $scope: DashboardAppScope,
+      $route: any,
+      $routeParams: {
+        id?: string;
+      },
+      kbnUrlStateStorage: IKbnUrlStateStorage,
+      history: History
+    ) =>
+      new DashboardAppController({
+        $route,
+        $scope,
+        $routeParams,
+        indexPatterns: deps.data.indexPatterns,
+        kbnUrlStateStorage,
+        history,
+        ...deps,
+      }),
+  }));
 }

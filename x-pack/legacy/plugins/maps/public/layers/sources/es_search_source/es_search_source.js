@@ -11,6 +11,8 @@ import uuid from 'uuid/v4';
 import { VECTOR_SHAPE_TYPES } from '../vector_feature_types';
 import { AbstractESSource } from '../es_source';
 import { SearchSource } from '../../../kibana_services';
+import { VectorStyle } from '../../styles/vector/vector_style';
+import { VectorLayer } from '../../vector_layer';
 import { hitsToGeoJson } from '../../../elasticsearch_geo_utils';
 import { CreateSourceEditor } from './create_source_editor';
 import { UpdateSourceEditor } from './update_source_editor';
@@ -19,15 +21,22 @@ import {
   ES_GEO_FIELD_TYPE,
   DEFAULT_MAX_BUCKETS_LIMIT,
   SORT_ORDER,
+  SCALING_TYPES,
 } from '../../../../common/constants';
 import { i18n } from '@kbn/i18n';
 import { getDataSourceLabel } from '../../../../common/i18n_getters';
 import { getSourceFields } from '../../../index_pattern_util';
 import { loadIndexSettings } from './load_index_settings';
+import { BlendedVectorLayer } from '../../blended_vector_layer';
 
 import { DEFAULT_FILTER_BY_MAP_BOUNDS } from './constants';
 import { ESDocField } from '../../fields/es_doc_field';
 import { getField, addFieldToDSL } from '../../util/es_agg_utils';
+import { registerSource } from '../source_registry';
+
+const sourceTitle = i18n.translate('xpack.maps.source.esSearchTitle', {
+  defaultMessage: 'Documents',
+});
 
 function getDocValueAndSourceFields(indexPattern, fieldNames) {
   const docValueFields = [];
@@ -61,31 +70,6 @@ function getDocValueAndSourceFields(indexPattern, fieldNames) {
 
 export class ESSearchSource extends AbstractESSource {
   static type = ES_SEARCH;
-  static title = i18n.translate('xpack.maps.source.esSearchTitle', {
-    defaultMessage: 'Documents',
-  });
-  static description = i18n.translate('xpack.maps.source.esSearchDescription', {
-    defaultMessage: 'Vector data from a Kibana index pattern',
-  });
-
-  static renderEditor({ onPreviewSource, inspectorAdapters }) {
-    const onSourceConfigChange = sourceConfig => {
-      if (!sourceConfig) {
-        onPreviewSource(null);
-        return;
-      }
-
-      const source = new ESSearchSource(
-        {
-          id: uuid(),
-          ...sourceConfig,
-        },
-        inspectorAdapters
-      );
-      onPreviewSource(source);
-    };
-    return <CreateSourceEditor onSourceConfigChange={onSourceConfigChange} />;
-  }
 
   constructor(descriptor, inspectorAdapters) {
     super(
@@ -99,7 +83,7 @@ export class ESSearchSource extends AbstractESSource {
         tooltipProperties: _.get(descriptor, 'tooltipProperties', []),
         sortField: _.get(descriptor, 'sortField', ''),
         sortOrder: _.get(descriptor, 'sortOrder', SORT_ORDER.DESC),
-        useTopHits: _.get(descriptor, 'useTopHits', false),
+        scalingType: _.get(descriptor, 'scalingType', SCALING_TYPES.LIMIT),
         topHitsSplitField: descriptor.topHitsSplitField,
         topHitsSize: _.get(descriptor, 'topHitsSize', 1),
       },
@@ -111,6 +95,32 @@ export class ESSearchSource extends AbstractESSource {
     );
   }
 
+  createDefaultLayer(options, mapColors) {
+    if (this._descriptor.scalingType === SCALING_TYPES.CLUSTERS) {
+      const layerDescriptor = BlendedVectorLayer.createDescriptor(
+        {
+          sourceDescriptor: this._descriptor,
+          ...options,
+        },
+        mapColors
+      );
+      const style = new VectorStyle(layerDescriptor.style, this);
+      return new BlendedVectorLayer({
+        layerDescriptor: layerDescriptor,
+        source: this,
+        style,
+      });
+    }
+
+    const layerDescriptor = this._createDefaultLayerDescriptor(options, mapColors);
+    const style = new VectorStyle(layerDescriptor.style, this);
+    return new VectorLayer({
+      layerDescriptor: layerDescriptor,
+      source: this,
+      style,
+    });
+  }
+
   createField({ fieldName }) {
     return new ESDocField({
       fieldName,
@@ -119,15 +129,20 @@ export class ESSearchSource extends AbstractESSource {
   }
 
   renderSourceSettingsEditor({ onChange }) {
+    const getGeoField = () => {
+      return this._getGeoField();
+    };
     return (
       <UpdateSourceEditor
         source={this}
-        indexPatternId={this._descriptor.indexPatternId}
+        indexPatternId={this.getIndexPatternId()}
+        getGeoField={getGeoField}
         onChange={onChange}
         tooltipFields={this._tooltipFields}
         sortField={this._descriptor.sortField}
         sortOrder={this._descriptor.sortOrder}
-        useTopHits={this._descriptor.useTopHits}
+        scalingType={this._descriptor.scalingType}
+        filterByMapBounds={this.isFilterByMapBounds()}
         topHitsSplitField={this._descriptor.topHitsSplitField}
         topHitsSize={this._descriptor.topHitsSize}
       />
@@ -157,7 +172,7 @@ export class ESSearchSource extends AbstractESSource {
   }
 
   async getImmutableProperties() {
-    let indexPatternTitle = this._descriptor.indexPatternId;
+    let indexPatternTitle = this.getIndexPatternId();
     let geoFieldType = '';
     try {
       const indexPattern = await this.getIndexPattern();
@@ -171,7 +186,7 @@ export class ESSearchSource extends AbstractESSource {
     return [
       {
         label: getDataSourceLabel(),
-        value: ESSearchSource.title,
+        value: sourceTitle,
       },
       {
         label: i18n.translate('xpack.maps.source.esSearch.indexPatternLabel', {
@@ -239,7 +254,7 @@ export class ESSearchSource extends AbstractESSource {
       shard_size: DEFAULT_MAX_BUCKETS_LIMIT,
     };
 
-    const searchSource = await this._makeSearchSource(searchFilters, 0);
+    const searchSource = await this.makeSearchSource(searchFilters, 0);
     searchSource.setField('aggs', {
       totalEntities: {
         cardinality: addFieldToDSL(cardinalityAgg, topHitsSplitField),
@@ -300,7 +315,7 @@ export class ESSearchSource extends AbstractESSource {
     );
 
     const initialSearchContext = { docvalue_fields: docValueFields }; // Request fields in docvalue_fields insted of _source
-    const searchSource = await this._makeSearchSource(
+    const searchSource = await this.makeSearchSource(
       searchFilters,
       maxResultWindow,
       initialSearchContext
@@ -332,13 +347,19 @@ export class ESSearchSource extends AbstractESSource {
   }
 
   _isTopHits() {
-    const { useTopHits, topHitsSplitField } = this._descriptor;
-    return !!(useTopHits && topHitsSplitField);
+    const { scalingType, topHitsSplitField } = this._descriptor;
+    return !!(scalingType === SCALING_TYPES.TOP_HITS && topHitsSplitField);
   }
 
   _hasSort() {
     const { sortField, sortOrder } = this._descriptor;
     return !!sortField && !!sortOrder;
+  }
+
+  async getMaxResultWindow() {
+    const indexPattern = await this.getIndexPattern();
+    const indexSettings = await loadIndexSettings(indexPattern.title);
+    return indexSettings.maxResultWindow;
   }
 
   async getGeoJsonWithMeta(layerName, searchFilters, registerCancelCallback) {
@@ -383,7 +404,7 @@ export class ESSearchSource extends AbstractESSource {
 
     return {
       data: featureCollection,
-      meta,
+      meta: { ...meta, sourceType: ES_SEARCH },
     };
   }
 
@@ -442,11 +463,9 @@ export class ESSearchSource extends AbstractESSource {
   }
 
   isFilterByMapBounds() {
-    return _.get(this._descriptor, 'filterByMapBounds', false);
-  }
-
-  isFilterByMapBoundsConfigurable() {
-    return true;
+    return this._descriptor.scalingType === SCALING_TYPES.CLUSTER
+      ? true
+      : this._descriptor.filterByMapBounds;
   }
 
   async getLeftJoinFields() {
@@ -533,7 +552,7 @@ export class ESSearchSource extends AbstractESSource {
     return {
       sortField: this._descriptor.sortField,
       sortOrder: this._descriptor.sortOrder,
-      useTopHits: this._descriptor.useTopHits,
+      scalingType: this._descriptor.scalingType,
       topHitsSplitField: this._descriptor.topHitsSplitField,
       topHitsSize: this._descriptor.topHitsSize,
     };
@@ -548,3 +567,34 @@ export class ESSearchSource extends AbstractESSource {
     };
   }
 }
+
+registerSource({
+  ConstructorFunction: ESSearchSource,
+  type: ES_SEARCH,
+});
+
+export const esDocumentsLayerWizardConfig = {
+  description: i18n.translate('xpack.maps.source.esSearchDescription', {
+    defaultMessage: 'Vector data from a Kibana index pattern',
+  }),
+  icon: 'logoElasticsearch',
+  renderWizard: ({ onPreviewSource, inspectorAdapters }) => {
+    const onSourceConfigChange = sourceConfig => {
+      if (!sourceConfig) {
+        onPreviewSource(null);
+        return;
+      }
+
+      const source = new ESSearchSource(
+        {
+          id: uuid(),
+          ...sourceConfig,
+        },
+        inspectorAdapters
+      );
+      onPreviewSource(source);
+    };
+    return <CreateSourceEditor onSourceConfigChange={onSourceConfigChange} />;
+  },
+  title: sourceTitle,
+};

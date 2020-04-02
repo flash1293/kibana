@@ -5,7 +5,6 @@
  */
 
 import _ from 'lodash';
-import chrome from 'ui/chrome';
 import React from 'react';
 import { AbstractTMSSource } from '../tms_source';
 import { VectorTileLayer } from '../../vector_tile_layer';
@@ -16,16 +15,15 @@ import { UpdateSourceEditor } from './update_source_editor';
 import { i18n } from '@kbn/i18n';
 import { getDataSourceLabel } from '../../../../common/i18n_getters';
 import { EMS_TMS } from '../../../../common/constants';
+import { getInjectedVarFunc, getUiSettings } from '../../../kibana_services';
+import { registerSource } from '../source_registry';
+
+const sourceTitle = i18n.translate('xpack.maps.source.emsTileTitle', {
+  defaultMessage: 'EMS Basemaps',
+});
 
 export class EMSTMSSource extends AbstractTMSSource {
   static type = EMS_TMS;
-  static title = i18n.translate('xpack.maps.source.emsTileTitle', {
-    defaultMessage: 'EMS Basemaps',
-  });
-  static description = i18n.translate('xpack.maps.source.emsTileDescription', {
-    defaultMessage: 'Tile map service from Elastic Maps Service',
-  });
-  static icon = 'emsApp';
 
   static createDescriptor(sourceConfig) {
     return {
@@ -33,16 +31,6 @@ export class EMSTMSSource extends AbstractTMSSource {
       id: sourceConfig.id,
       isAutoSelect: sourceConfig.isAutoSelect,
     };
-  }
-
-  static renderEditor({ onPreviewSource, inspectorAdapters }) {
-    const onSourceConfigChange = sourceConfig => {
-      const descriptor = EMSTMSSource.createDescriptor(sourceConfig);
-      const source = new EMSTMSSource(descriptor, inspectorAdapters);
-      onPreviewSource(source);
-    };
-
-    return <TileServiceSelect onTileSelect={onSourceConfigChange} />;
   }
 
   constructor(descriptor, inspectorAdapters) {
@@ -69,7 +57,7 @@ export class EMSTMSSource extends AbstractTMSSource {
     return [
       {
         label: getDataSourceLabel(),
-        value: EMSTMSSource.title,
+        value: sourceTitle,
       },
       {
         label: i18n.translate('xpack.maps.source.emsTile.serviceId', {
@@ -152,8 +140,30 @@ export class EMSTMSSource extends AbstractTMSSource {
       return this._descriptor.id;
     }
 
-    const isDarkMode = chrome.getUiSettingsClient().get('theme:darkMode', false);
-    const emsTileLayerId = chrome.getInjected('emsTileLayerId');
+    const isDarkMode = getUiSettings().get('theme:darkMode', false);
+    const emsTileLayerId = getInjectedVarFunc()('emsTileLayerId');
     return isDarkMode ? emsTileLayerId.dark : emsTileLayerId.bright;
   }
 }
+
+registerSource({
+  ConstructorFunction: EMSTMSSource,
+  type: EMS_TMS,
+});
+
+export const emsBaseMapLayerWizardConfig = {
+  description: i18n.translate('xpack.maps.source.emsTileDescription', {
+    defaultMessage: 'Tile map service from Elastic Maps Service',
+  }),
+  icon: 'emsApp',
+  renderWizard: ({ onPreviewSource, inspectorAdapters }) => {
+    const onSourceConfigChange = sourceConfig => {
+      const descriptor = EMSTMSSource.createDescriptor(sourceConfig);
+      const source = new EMSTMSSource(descriptor, inspectorAdapters);
+      onPreviewSource(source);
+    };
+
+    return <TileServiceSelect onTileSelect={onSourceConfigChange} />;
+  },
+  title: sourceTitle,
+};

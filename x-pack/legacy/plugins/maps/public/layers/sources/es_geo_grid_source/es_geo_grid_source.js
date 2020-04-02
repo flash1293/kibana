@@ -12,21 +12,19 @@ import { HeatmapLayer } from '../../heatmap_layer';
 import { VectorLayer } from '../../vector_layer';
 import { convertCompositeRespToGeoJson, convertRegularRespToGeoJson } from './convert_to_geojson';
 import { VectorStyle } from '../../styles/vector/vector_style';
-import {
-  getDefaultDynamicProperties,
-  VECTOR_STYLES,
-} from '../../styles/vector/vector_style_defaults';
+import { getDefaultDynamicProperties } from '../../styles/vector/vector_style_defaults';
 import { COLOR_GRADIENTS } from '../../styles/color_utils';
 import { CreateSourceEditor } from './create_source_editor';
 import { UpdateSourceEditor } from './update_source_editor';
 import {
   DEFAULT_MAX_BUCKETS_LIMIT,
-  SOURCE_DATA_ID_ORIGIN,
   ES_GEO_GRID,
   COUNT_PROP_NAME,
   COLOR_MAP_TYPE,
   RENDER_AS,
   GRID_RESOLUTION,
+  VECTOR_STYLES,
+  FIELD_ORIGIN,
 } from '../../../../common/constants';
 import { i18n } from '@kbn/i18n';
 import { getDataSourceLabel } from '../../../../common/i18n_getters';
@@ -34,17 +32,20 @@ import { AbstractESAggSource } from '../es_agg_source';
 import { DynamicStyleProperty } from '../../styles/vector/properties/dynamic_style_property';
 import { StaticStyleProperty } from '../../styles/vector/properties/static_style_property';
 import { DataRequestAbortError } from '../../util/data_request';
+import { registerSource } from '../source_registry';
 
 export const MAX_GEOTILE_LEVEL = 29;
 
+const clustersTitle = i18n.translate('xpack.maps.source.esGridClustersTitle', {
+  defaultMessage: 'Clusters and grids',
+});
+
+const heatmapTitle = i18n.translate('xpack.maps.source.esGridHeatmapTitle', {
+  defaultMessage: 'Heat map',
+});
+
 export class ESGeoGridSource extends AbstractESAggSource {
   static type = ES_GEO_GRID;
-  static title = i18n.translate('xpack.maps.source.esGridTitle', {
-    defaultMessage: 'Grid aggregation',
-  });
-  static description = i18n.translate('xpack.maps.source.esGridDescription', {
-    defaultMessage: 'Geospatial data grouped in grids with metrics for each gridded cell',
-  });
 
   static createDescriptor({ indexPatternId, geoField, requestType, resolution }) {
     return {
@@ -57,25 +58,10 @@ export class ESGeoGridSource extends AbstractESAggSource {
     };
   }
 
-  static renderEditor({ onPreviewSource, inspectorAdapters }) {
-    const onSourceConfigChange = sourceConfig => {
-      if (!sourceConfig) {
-        onPreviewSource(null);
-        return;
-      }
-
-      const sourceDescriptor = ESGeoGridSource.createDescriptor(sourceConfig);
-      const source = new ESGeoGridSource(sourceDescriptor, inspectorAdapters);
-      onPreviewSource(source);
-    };
-
-    return <CreateSourceEditor onSourceConfigChange={onSourceConfigChange} />;
-  }
-
   renderSourceSettingsEditor({ onChange }) {
     return (
       <UpdateSourceEditor
-        indexPatternId={this._descriptor.indexPatternId}
+        indexPatternId={this.getIndexPatternId()}
         onChange={onChange}
         metrics={this._descriptor.metrics}
         renderAs={this._descriptor.requestType}
@@ -85,7 +71,7 @@ export class ESGeoGridSource extends AbstractESAggSource {
   }
 
   async getImmutableProperties() {
-    let indexPatternTitle = this._descriptor.indexPatternId;
+    let indexPatternTitle = this.getIndexPatternId();
     try {
       const indexPattern = await this.getIndexPattern();
       indexPatternTitle = indexPattern.title;
@@ -96,7 +82,7 @@ export class ESGeoGridSource extends AbstractESAggSource {
     return [
       {
         label: getDataSourceLabel(),
-        value: ESGeoGridSource.title,
+        value: this._descriptor.requestType === RENDER_AS.HEATMAP ? heatmapTitle : clustersTitle,
       },
       {
         label: i18n.translate('xpack.maps.source.esGrid.indexPatternLabel', {
@@ -109,12 +95,6 @@ export class ESGeoGridSource extends AbstractESAggSource {
           defaultMessage: 'Geospatial field',
         }),
         value: this._descriptor.geoField,
-      },
-      {
-        label: i18n.translate('xpack.maps.source.esGrid.showasFieldLabel', {
-          defaultMessage: 'Show as',
-        }),
-        value: this._descriptor.requestType,
       },
     ];
   }
@@ -292,7 +272,7 @@ export class ESGeoGridSource extends AbstractESAggSource {
 
   async getGeoJsonWithMeta(layerName, searchFilters, registerCancelCallback, isRequestStillActive) {
     const indexPattern = await this.getIndexPattern();
-    const searchSource = await this._makeSearchSource(searchFilters, 0);
+    const searchSource = await this.makeSearchSource(searchFilters, 0);
 
     let bucketsPerGrid = 1;
     this.getMetricFields().forEach(metricField => {
@@ -325,6 +305,7 @@ export class ESGeoGridSource extends AbstractESAggSource {
       },
       meta: {
         areResultsTrimmed: false,
+        sourceType: ES_GEO_GRID,
       },
     };
   }
@@ -355,7 +336,7 @@ export class ESGeoGridSource extends AbstractESAggSource {
           ...defaultDynamicProperties[VECTOR_STYLES.FILL_COLOR].options,
           field: {
             name: COUNT_PROP_NAME,
-            origin: SOURCE_DATA_ID_ORIGIN,
+            origin: FIELD_ORIGIN.SOURCE,
           },
           color: COLOR_GRADIENTS[0].value,
           type: COLOR_MAP_TYPE.ORDINAL,
@@ -379,7 +360,7 @@ export class ESGeoGridSource extends AbstractESAggSource {
           ...defaultDynamicProperties[VECTOR_STYLES.ICON_SIZE].options,
           field: {
             name: COUNT_PROP_NAME,
-            origin: SOURCE_DATA_ID_ORIGIN,
+            origin: FIELD_ORIGIN.SOURCE,
           },
         },
       },
@@ -389,7 +370,7 @@ export class ESGeoGridSource extends AbstractESAggSource {
           ...defaultDynamicProperties[VECTOR_STYLES.LABEL_TEXT].options,
           field: {
             name: COUNT_PROP_NAME,
-            origin: SOURCE_DATA_ID_ORIGIN,
+            origin: FIELD_ORIGIN.SOURCE,
           },
         },
       },
@@ -430,3 +411,62 @@ export class ESGeoGridSource extends AbstractESAggSource {
     return [VECTOR_SHAPE_TYPES.POINT];
   }
 }
+
+registerSource({
+  ConstructorFunction: ESGeoGridSource,
+  type: ES_GEO_GRID,
+});
+
+export const clustersLayerWizardConfig = {
+  description: i18n.translate('xpack.maps.source.esGridClustersDescription', {
+    defaultMessage: 'Geospatial data grouped in grids with metrics for each gridded cell',
+  }),
+  icon: 'logoElasticsearch',
+  renderWizard: ({ onPreviewSource, inspectorAdapters }) => {
+    const onSourceConfigChange = sourceConfig => {
+      if (!sourceConfig) {
+        onPreviewSource(null);
+        return;
+      }
+
+      const sourceDescriptor = ESGeoGridSource.createDescriptor(sourceConfig);
+      const source = new ESGeoGridSource(sourceDescriptor, inspectorAdapters);
+      onPreviewSource(source);
+    };
+
+    return (
+      <CreateSourceEditor
+        requestType={RENDER_AS.POINT}
+        onSourceConfigChange={onSourceConfigChange}
+      />
+    );
+  },
+  title: clustersTitle,
+};
+
+export const heatmapLayerWizardConfig = {
+  description: i18n.translate('xpack.maps.source.esGridHeatmapDescription', {
+    defaultMessage: 'Geospatial data grouped in grids to show density',
+  }),
+  icon: 'logoElasticsearch',
+  renderWizard: ({ onPreviewSource, inspectorAdapters }) => {
+    const onSourceConfigChange = sourceConfig => {
+      if (!sourceConfig) {
+        onPreviewSource(null);
+        return;
+      }
+
+      const sourceDescriptor = ESGeoGridSource.createDescriptor(sourceConfig);
+      const source = new ESGeoGridSource(sourceDescriptor, inspectorAdapters);
+      onPreviewSource(source);
+    };
+
+    return (
+      <CreateSourceEditor
+        requestType={RENDER_AS.HEATMAP}
+        onSourceConfigChange={onSourceConfigChange}
+      />
+    );
+  },
+  title: heatmapTitle,
+};

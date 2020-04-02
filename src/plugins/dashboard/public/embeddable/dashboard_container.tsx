@@ -58,6 +58,7 @@ export interface DashboardContainerInput extends ContainerInput {
   panels: {
     [panelId: string]: DashboardPanelState;
   };
+  isEmptyState?: boolean;
 }
 
 interface IndexSignature {
