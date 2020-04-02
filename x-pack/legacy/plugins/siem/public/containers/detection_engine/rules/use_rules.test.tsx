@@ -5,9 +5,8 @@
  */
 
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useRules, ReturnRules } from './use_rules';
+import { useRules, UseRules, ReturnRules } from './use_rules';
 import * as api from './api';
-import { PaginationOptions, FilterOptions } from '.';
 
 jest.mock('./api');
 
@@ -17,55 +16,40 @@ describe('useRules', () => {
   });
   test('init', async () => {
     await act(async () => {
-      const { result, waitForNextUpdate } = renderHook<
-        [PaginationOptions, FilterOptions],
-        ReturnRules
-      >(props =>
-        useRules(
-          {
+      const { result, waitForNextUpdate } = renderHook<UseRules, ReturnRules>(props =>
+        useRules({
+          pagination: {
             page: 1,
             perPage: 10,
             total: 100,
           },
-          {
+          filterOptions: {
             filter: '',
             sortField: 'created_at',
             sortOrder: 'desc',
-          }
-        )
+          },
+        })
       );
       await waitForNextUpdate();
-      expect(result.current).toEqual([
-        true,
-        {
-          data: [],
-          page: 1,
-          perPage: 20,
-          total: 0,
-        },
-        null,
-      ]);
+      expect(result.current).toEqual([true, null, result.current[2]]);
     });
   });
 
   test('fetch rules', async () => {
     await act(async () => {
-      const { result, waitForNextUpdate } = renderHook<
-        [PaginationOptions, FilterOptions],
-        ReturnRules
-      >(() =>
-        useRules(
-          {
+      const { result, waitForNextUpdate } = renderHook<UseRules, ReturnRules>(() =>
+        useRules({
+          pagination: {
             page: 1,
             perPage: 10,
             total: 100,
           },
-          {
+          filterOptions: {
             filter: '',
             sortField: 'created_at',
             sortOrder: 'desc',
-          }
-        )
+          },
+        })
       );
       await waitForNextUpdate();
       await waitForNextUpdate();
@@ -74,6 +58,7 @@ describe('useRules', () => {
         {
           data: [
             {
+              actions: [],
               created_at: '2020-02-14T19:49:28.178Z',
               created_by: 'elastic',
               description:
@@ -98,6 +83,7 @@ describe('useRules', () => {
               severity: 'high',
               tags: ['Elastic', 'Endpoint'],
               threat: [],
+              throttle: null,
               to: 'now',
               type: 'query',
               updated_at: '2020-02-14T19:49:28.320Z',
@@ -105,6 +91,7 @@ describe('useRules', () => {
               version: 1,
             },
             {
+              actions: [],
               created_at: '2020-02-14T19:49:28.189Z',
               created_by: 'elastic',
               description:
@@ -129,6 +116,7 @@ describe('useRules', () => {
               severity: 'medium',
               tags: ['Elastic', 'Endpoint'],
               threat: [],
+              throttle: null,
               to: 'now',
               type: 'query',
               updated_at: '2020-02-14T19:49:28.326Z',
@@ -148,22 +136,19 @@ describe('useRules', () => {
   test('re-fetch rules', async () => {
     const spyOnfetchRules = jest.spyOn(api, 'fetchRules');
     await act(async () => {
-      const { result, waitForNextUpdate } = renderHook<
-        [PaginationOptions, FilterOptions],
-        ReturnRules
-      >(id =>
-        useRules(
-          {
+      const { result, waitForNextUpdate } = renderHook<UseRules, ReturnRules>(id =>
+        useRules({
+          pagination: {
             page: 1,
             perPage: 10,
             total: 100,
           },
-          {
+          filterOptions: {
             filter: '',
             sortField: 'created_at',
             sortOrder: 'desc',
-          }
-        )
+          },
+        })
       );
       await waitForNextUpdate();
       await waitForNextUpdate();
@@ -178,37 +163,37 @@ describe('useRules', () => {
   test('fetch rules if props changes', async () => {
     const spyOnfetchRules = jest.spyOn(api, 'fetchRules');
     await act(async () => {
-      const { rerender, waitForNextUpdate } = renderHook<
-        [PaginationOptions, FilterOptions],
-        ReturnRules
-      >(args => useRules(args[0], args[1]), {
-        initialProps: [
-          {
-            page: 1,
-            perPage: 10,
-            total: 100,
-          },
-          {
-            filter: '',
-            sortField: 'created_at',
-            sortOrder: 'desc',
-          },
-        ],
-      });
-      await waitForNextUpdate();
-      await waitForNextUpdate();
-      rerender([
+      const { rerender, waitForNextUpdate } = renderHook<UseRules, ReturnRules>(
+        args => useRules(args),
         {
+          initialProps: {
+            pagination: {
+              page: 1,
+              perPage: 10,
+              total: 100,
+            },
+            filterOptions: {
+              filter: '',
+              sortField: 'created_at',
+              sortOrder: 'desc',
+            },
+          },
+        }
+      );
+      await waitForNextUpdate();
+      await waitForNextUpdate();
+      rerender({
+        pagination: {
           page: 1,
           perPage: 10,
           total: 100,
         },
-        {
+        filterOptions: {
           filter: 'hello world',
           sortField: 'created_at',
           sortOrder: 'desc',
         },
-      ]);
+      });
       await waitForNextUpdate();
       expect(spyOnfetchRules).toHaveBeenCalledTimes(2);
     });

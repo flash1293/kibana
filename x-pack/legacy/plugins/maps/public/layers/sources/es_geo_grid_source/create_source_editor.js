@@ -9,40 +9,17 @@ import React, { Fragment, Component } from 'react';
 import PropTypes from 'prop-types';
 
 import { SingleFieldSelect } from '../../../components/single_field_select';
-import { RENDER_AS } from './render_as';
-import { indexPatternService } from '../../../kibana_services';
+import { RENDER_AS } from '../../../../common/constants';
+import { getIndexPatternService, getIndexPatternSelectComponent } from '../../../kibana_services';
 import { NoIndexPatternCallout } from '../../../components/no_index_pattern_callout';
 import { i18n } from '@kbn/i18n';
 
-import { EuiFormRow, EuiComboBox, EuiSpacer } from '@elastic/eui';
+import { EuiFormRow, EuiSpacer } from '@elastic/eui';
 import {
   AGGREGATABLE_GEO_FIELD_TYPES,
   getAggregatableGeoFields,
 } from '../../../index_pattern_util';
-
-import { npStart } from 'ui/new_platform';
-const { IndexPatternSelect } = npStart.plugins.data.ui;
-
-const requestTypeOptions = [
-  {
-    label: i18n.translate('xpack.maps.source.esGeoGrid.gridRectangleDropdownOption', {
-      defaultMessage: 'grid rectangles',
-    }),
-    value: RENDER_AS.GRID,
-  },
-  {
-    label: i18n.translate('xpack.maps.source.esGeoGrid.heatmapDropdownOption', {
-      defaultMessage: 'heat map',
-    }),
-    value: RENDER_AS.HEATMAP,
-  },
-  {
-    label: i18n.translate('xpack.maps.source.esGeoGrid.pointsDropdownOption', {
-      defaultMessage: 'clusters',
-    }),
-    value: RENDER_AS.POINT,
-  },
-];
+import { RenderAsSelect } from './render_as_select';
 
 export class CreateSourceEditor extends Component {
   static propTypes = {
@@ -53,7 +30,7 @@ export class CreateSourceEditor extends Component {
     isLoadingIndexPattern: false,
     indexPatternId: '',
     geoField: '',
-    requestType: requestTypeOptions[0],
+    requestType: this.props.requestType,
     noGeoIndexPatternsExist: false,
   };
 
@@ -92,7 +69,7 @@ export class CreateSourceEditor extends Component {
 
     let indexPattern;
     try {
-      indexPattern = await indexPatternService.get(indexPatternId);
+      indexPattern = await getIndexPatternService().get(indexPatternId);
     } catch (err) {
       // index pattern no longer exists
       return;
@@ -129,10 +106,10 @@ export class CreateSourceEditor extends Component {
     );
   };
 
-  _onRequestTypeSelect = selectedOptions => {
+  _onRequestTypeSelect = newValue => {
     this.setState(
       {
-        requestType: selectedOptions[0],
+        requestType: newValue,
       },
       this.previewLayer
     );
@@ -142,9 +119,7 @@ export class CreateSourceEditor extends Component {
     const { indexPatternId, geoField, requestType } = this.state;
 
     const sourceConfig =
-      indexPatternId && geoField
-        ? { indexPatternId, geoField, requestType: requestType.value }
-        : null;
+      indexPatternId && geoField ? { indexPatternId, geoField, requestType } : null;
     this.props.onSourceConfigChange(sourceConfig);
   };
 
@@ -179,32 +154,19 @@ export class CreateSourceEditor extends Component {
     );
   }
 
-  _renderLayerSelect() {
-    if (!this.state.indexPattern) {
+  _renderRenderAsSelect() {
+    if (this.state.requestType === RENDER_AS.HEATMAP || !this.state.indexPattern) {
       return null;
     }
 
     return (
-      <EuiFormRow
-        label={i18n.translate('xpack.maps.source.esGeoGrid.showAsLabel', {
-          defaultMessage: 'Show as',
-        })}
-      >
-        <EuiComboBox
-          placeholder={i18n.translate('xpack.maps.source.esGeoGrid.showAsPlaceholder', {
-            defaultMessage: 'Select a single option',
-          })}
-          singleSelection={{ asPlainText: true }}
-          options={requestTypeOptions}
-          selectedOptions={[this.state.requestType]}
-          onChange={this._onRequestTypeSelect}
-          isClearable={false}
-        />
-      </EuiFormRow>
+      <RenderAsSelect renderAs={this.state.requestType} onChange={this._onRequestTypeSelect} />
     );
   }
 
   _renderIndexPatternSelect() {
+    const IndexPatternSelect = getIndexPatternSelectComponent();
+
     return (
       <EuiFormRow
         label={i18n.translate('xpack.maps.source.esGeoGrid.indexPatternLabel', {
@@ -244,7 +206,7 @@ export class CreateSourceEditor extends Component {
         {this._renderNoIndexPatternWarning()}
         {this._renderIndexPatternSelect()}
         {this._renderGeoSelect()}
-        {this._renderLayerSelect()}
+        {this._renderRenderAsSelect()}
       </Fragment>
     );
   }

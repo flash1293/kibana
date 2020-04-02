@@ -20,8 +20,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 import { EditorRenderProps } from '../../kibana/public/visualize/np_ready/types';
-import { VisualizeEmbeddable } from '../../visualizations/public/embeddable';
-import { VisualizeEmbeddableFactory } from '../../visualizations/public/embeddable/visualize_embeddable_factory';
 import { PanelsContainer, Panel } from '../../../../plugins/kibana_react/public';
 
 import './vis_type_agg_filter';
@@ -30,67 +28,44 @@ import { DefaultEditorControllerState } from './default_editor_controller';
 import { getInitialWidth } from './editor_size';
 
 function DefaultEditor({
-  embeddable,
-  savedObj,
+  vis,
   uiState,
   timeRange,
   filters,
-  appState,
   optionTabs,
   query,
+  embeddableHandler,
+  eventEmitter,
+  linked,
+  savedSearch,
 }: DefaultEditorControllerState & Omit<EditorRenderProps, 'data' | 'core'>) {
   const visRef = useRef<HTMLDivElement>(null);
-  const visHandler = useRef<VisualizeEmbeddable | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [factory, setFactory] = useState<VisualizeEmbeddableFactory | null>(null);
-  const { vis } = savedObj;
 
   const onClickCollapse = useCallback(() => {
     setIsCollapsed(value => !value);
   }, []);
 
   useEffect(() => {
-    async function visualize() {
-      if (!visRef.current || (!visHandler.current && factory)) {
-        return;
-      }
-
-      if (!visHandler.current) {
-        const embeddableFactory = embeddable.getEmbeddableFactory(
-          'visualization'
-        ) as VisualizeEmbeddableFactory;
-        setFactory(embeddableFactory);
-
-        visHandler.current = (await embeddableFactory.createFromObject(savedObj, {
-          // should be look through createFromObject interface again because of "id" param
-          id: '',
-          uiState,
-          appState,
-          timeRange,
-          filters,
-          query,
-        })) as VisualizeEmbeddable;
-
-        visHandler.current.render(visRef.current);
-      } else {
-        visHandler.current.updateInput({
-          timeRange,
-          filters,
-          query,
-        });
-      }
+    if (!visRef.current) {
+      return;
     }
 
-    visualize();
-  }, [uiState, savedObj, timeRange, filters, appState, query, factory, embeddable]);
+    embeddableHandler.render(visRef.current);
+    setTimeout(() => {
+      eventEmitter.emit('apply');
+    });
+
+    return () => embeddableHandler.destroy();
+  }, [embeddableHandler, eventEmitter]);
 
   useEffect(() => {
-    return () => {
-      if (visHandler.current) {
-        visHandler.current.destroy();
-      }
-    };
-  }, []);
+    embeddableHandler.updateInput({
+      timeRange,
+      filters,
+      query,
+    });
+  }, [embeddableHandler, timeRange, filters, query]);
 
   const editorInitialWidth = getInitialWidth(vis.type.editorConfig.defaultSize);
 
@@ -115,6 +90,10 @@ function DefaultEditor({
           optionTabs={optionTabs}
           vis={vis}
           uiState={uiState}
+          isLinkedSearch={linked}
+          savedSearch={savedSearch}
+          timeRange={timeRange}
+          eventEmitter={eventEmitter}
         />
       </Panel>
     </PanelsContainer>

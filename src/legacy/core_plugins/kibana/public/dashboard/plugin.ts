@@ -18,6 +18,7 @@
  */
 
 import { BehaviorSubject } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 import {
   App,
   AppMountParameters,
@@ -29,8 +30,12 @@ import {
 } from 'kibana/public';
 import { i18n } from '@kbn/i18n';
 import { RenderDeps } from './np_ready/application';
-import { DataPublicPluginStart, DataPublicPluginSetup } from '../../../../../plugins/data/public';
-import { IEmbeddableStart } from '../../../../../plugins/embeddable/public';
+import {
+  DataPublicPluginStart,
+  DataPublicPluginSetup,
+  esFilters,
+} from '../../../../../plugins/data/public';
+import { EmbeddableStart } from '../../../../../plugins/embeddable/public';
 import { Storage } from '../../../../../plugins/kibana_utils/public';
 import { NavigationPublicPluginStart as NavigationStart } from '../../../../../plugins/navigation/public';
 import { DashboardConstants } from './np_ready/dashboard_constants';
@@ -44,16 +49,16 @@ import {
   KibanaLegacySetup,
   KibanaLegacyStart,
 } from '../../../../../plugins/kibana_legacy/public';
-import { createSavedDashboardLoader } from './saved_dashboard/saved_dashboards';
 import { createKbnUrlTracker } from '../../../../../plugins/kibana_utils/public';
-import { getQueryStateContainer } from '../../../../../plugins/data/public';
+import { DashboardStart } from '../../../../../plugins/dashboard/public';
 
 export interface DashboardPluginStartDependencies {
   data: DataPublicPluginStart;
-  embeddable: IEmbeddableStart;
+  embeddable: EmbeddableStart;
   navigation: NavigationStart;
   share: SharePluginStart;
   kibanaLegacy: KibanaLegacyStart;
+  dashboard: DashboardStart;
 }
 
 export interface DashboardPluginSetupDependencies {
@@ -66,10 +71,11 @@ export class DashboardPlugin implements Plugin {
   private startDependencies: {
     data: DataPublicPluginStart;
     savedObjectsClient: SavedObjectsClientContract;
-    embeddable: IEmbeddableStart;
+    embeddable: EmbeddableStart;
     navigation: NavigationStart;
     share: SharePluginStart;
     dashboardConfig: KibanaLegacyStart['dashboardConfig'];
+    dashboard: DashboardStart;
   } | null = null;
 
   private appStateUpdater = new BehaviorSubject<AngularRenderedAppUpdater>(() => ({}));
@@ -78,9 +84,6 @@ export class DashboardPlugin implements Plugin {
   constructor(private initializerContext: PluginInitializerContext) {}
 
   public setup(core: CoreSetup, { home, kibanaLegacy, data }: DashboardPluginSetupDependencies) {
-    const { querySyncStateContainer, stop: stopQuerySyncStateContainer } = getQueryStateContainer(
-      data.query
-    );
     const { appMounted, appUnMounted, stop: stopUrlTracker } = createKbnUrlTracker({
       baseUrl: core.http.basePath.prepend('/app/kibana'),
       defaultSubUrl: `#${DashboardConstants.LANDING_PAGE_PATH}`,
@@ -97,12 +100,19 @@ export class DashboardPlugin implements Plugin {
       stateParams: [
         {
           kbnUrlKey: '_g',
-          stateUpdate$: querySyncStateContainer.state$,
+          stateUpdate$: data.query.state$.pipe(
+            filter(
+              ({ changes }) => !!(changes.globalFilters || changes.time || changes.refreshInterval)
+            ),
+            map(({ state }) => ({
+              ...state,
+              filters: state.filters?.filter(esFilters.isFilterPinned),
+            }))
+          ),
         },
       ],
     });
     this.stopUrlTracking = () => {
-      stopQuerySyncStateContainer();
       stopUrlTracker();
     };
     const app: App = {
@@ -121,13 +131,9 @@ export class DashboardPlugin implements Plugin {
           share,
           data: dataStart,
           dashboardConfig,
+          dashboard: { getSavedDashboardLoader },
         } = this.startDependencies;
-        const savedDashboards = createSavedDashboardLoader({
-          savedObjectsClient,
-          indexPatterns: dataStart.indexPatterns,
-          chrome: coreStart.chrome,
-          overlays: coreStart.overlays,
-        });
+        const savedDashboards = getSavedDashboardLoader();
 
         const deps: RenderDeps = {
           pluginInitializerContext: this.initializerContext,
@@ -145,6 +151,10 @@ export class DashboardPlugin implements Plugin {
           savedQueryService: dataStart.query.savedQueries,
           embeddable,
           dashboardCapabilities: coreStart.application.capabilities.dashboard,
+          embeddableCapabilities: {
+            visualizeCapabilities: coreStart.application.capabilities.visualize,
+            mapsCapabilities: coreStart.application.capabilities.maps,
+          },
           localStorage: new Storage(localStorage),
         };
         const { renderApp } = await import('./np_ready/application');
@@ -187,6 +197,7 @@ export class DashboardPlugin implements Plugin {
       data,
       share,
       kibanaLegacy: { dashboardConfig },
+      dashboard,
     }: DashboardPluginStartDependencies
   ) {
     this.startDependencies = {
@@ -196,6 +207,7 @@ export class DashboardPlugin implements Plugin {
       navigation,
       share,
       dashboardConfig,
+      dashboard,
     };
   }
 

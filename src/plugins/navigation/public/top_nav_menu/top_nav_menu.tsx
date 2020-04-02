@@ -20,7 +20,6 @@
 import React, { ReactElement } from 'react';
 
 import { EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
-import { I18nProvider } from '@kbn/i18n/react';
 
 import { TopNavMenuData } from './top_nav_menu_data';
 import { TopNavMenuItem } from './top_nav_menu_item';
@@ -53,7 +52,11 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
     if (!config) return;
     return config.map((menuItem: TopNavMenuData, i: number) => {
       return (
-        <EuiFlexItem grow={false} key={`nav-menu-${i}`}>
+        <EuiFlexItem
+          grow={false}
+          key={`nav-menu-${i}`}
+          className={menuItem.emphasize ? 'kbnTopNavItemEmphasized' : ''}
+        >
           <TopNavMenuItem {...menuItem} />
         </EuiFlexItem>
       );
@@ -66,6 +69,7 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
       <EuiFlexGroup
         data-test-subj="top-nav"
         justifyContent="flexStart"
+        alignItems="center"
         gutterSize="none"
         className="kbnTopNavMenu"
         responsive={false}
@@ -91,7 +95,7 @@ export function TopNavMenu(props: TopNavMenuProps): ReactElement | null {
     );
   }
 
-  return <I18nProvider>{renderLayout()}</I18nProvider>;
+  return renderLayout();
 }
 
 TopNavMenu.defaultProps = {

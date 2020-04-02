@@ -18,13 +18,12 @@
  */
 
 import { get } from 'lodash';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
-import { EuiComboBox, EuiComboBoxOptionProps, EuiFormRow } from '@elastic/eui';
+import { EuiComboBox, EuiComboBoxOptionOption, EuiFormRow } from '@elastic/eui';
 import { i18n } from '@kbn/i18n';
 
-import { IndexPatternField } from 'src/plugins/data/public';
-import { AggParam, IAggConfig, IFieldParamType } from '../../legacy_imports';
+import { AggParam, IAggConfig, IFieldParamType, IndexPatternField } from 'src/plugins/data/public';
 import { formatListAsProse, parseCommaSeparatedList, useValidation } from './utils';
 import { AggParamEditorProps } from '../agg_param_props';
 import { ComboBoxGroupedOptions } from '../../utils';
@@ -50,11 +49,12 @@ function FieldParamEditor({
   setValidity,
   setValue,
 }: FieldParamEditorProps) {
+  const [isDirty, setIsDirty] = useState(false);
   const selectedOptions: ComboBoxGroupedOptions<IndexPatternField> = value
     ? [{ label: value.displayName || value.name, target: value }]
     : [];
 
-  const onChange = (options: EuiComboBoxOptionProps[]) => {
+  const onChange = (options: EuiComboBoxOptionOption[]) => {
     const selectedOption: IndexPatternField = get(options, '0.target');
     if (!(aggParam.required && !selectedOption)) {
       setValue(selectedOption);
@@ -79,7 +79,9 @@ function FieldParamEditor({
     );
   }
 
-  const isValid = !!value && !errors.length;
+  const isValid = !!value && !errors.length && !isDirty;
+  // we show an error message right away if there is no compatible fields
+  const showErrorMessage = (showValidation || !indexedFields.length) && !isValid;
 
   useValidation(setValidity, isValid);
 
@@ -98,10 +100,12 @@ function FieldParamEditor({
     }
   }, []);
 
+  const onSearchChange = useCallback(searchValue => setIsDirty(Boolean(searchValue)), []);
+
   return (
     <EuiFormRow
       label={customLabel || label}
-      isInvalid={showValidation ? !isValid : false}
+      isInvalid={showErrorMessage}
       fullWidth={true}
       error={errors}
       compressed
@@ -116,9 +120,10 @@ function FieldParamEditor({
         selectedOptions={selectedOptions}
         singleSelection={{ asPlainText: true }}
         isClearable={false}
-        isInvalid={showValidation ? !isValid : false}
+        isInvalid={showErrorMessage}
         onChange={onChange}
         onBlur={setTouched}
+        onSearchChange={onSearchChange}
         data-test-subj="visDefaultEditorField"
         fullWidth={true}
       />

@@ -19,6 +19,7 @@
 
 import { BehaviorSubject } from 'rxjs';
 import { i18n } from '@kbn/i18n';
+import { filter, map } from 'rxjs/operators';
 
 import {
   AppMountParameters,
@@ -33,16 +34,16 @@ import { Storage, createKbnUrlTracker } from '../../../../../plugins/kibana_util
 import {
   DataPublicPluginStart,
   DataPublicPluginSetup,
-  getQueryStateContainer,
+  esFilters,
 } from '../../../../../plugins/data/public';
-import { IEmbeddableStart } from '../../../../../plugins/embeddable/public';
+import { EmbeddableStart } from '../../../../../plugins/embeddable/public';
 import { NavigationPublicPluginStart as NavigationStart } from '../../../../../plugins/navigation/public';
 import { SharePluginStart } from '../../../../../plugins/share/public';
 import {
   KibanaLegacySetup,
   AngularRenderedAppUpdater,
 } from '../../../../../plugins/kibana_legacy/public';
-import { VisualizationsStart } from '../../../visualizations/public';
+import { VisualizationsStart } from '../../../../../plugins/visualizations/public';
 import { VisualizeConstants } from './np_ready/visualize_constants';
 import { setServices, VisualizeKibanaServices } from './kibana_services';
 import {
@@ -50,10 +51,11 @@ import {
   HomePublicPluginSetup,
 } from '../../../../../plugins/home/public';
 import { UsageCollectionSetup } from '../../../../../plugins/usage_collection/public';
+import { DefaultEditorController } from '../../../vis_default_editor/public';
 
 export interface VisualizePluginStartDependencies {
   data: DataPublicPluginStart;
-  embeddable: IEmbeddableStart;
+  embeddable: EmbeddableStart;
   navigation: NavigationStart;
   share: SharePluginStart;
   visualizations: VisualizationsStart;
@@ -69,7 +71,7 @@ export interface VisualizePluginSetupDependencies {
 export class VisualizePlugin implements Plugin {
   private startDependencies: {
     data: DataPublicPluginStart;
-    embeddable: IEmbeddableStart;
+    embeddable: EmbeddableStart;
     navigation: NavigationStart;
     savedObjectsClient: SavedObjectsClientContract;
     share: SharePluginStart;
@@ -84,9 +86,6 @@ export class VisualizePlugin implements Plugin {
     core: CoreSetup,
     { home, kibanaLegacy, usageCollection, data }: VisualizePluginSetupDependencies
   ) {
-    const { querySyncStateContainer, stop: stopQuerySyncStateContainer } = getQueryStateContainer(
-      data.query
-    );
     const { appMounted, appUnMounted, stop: stopUrlTracker, setActiveUrl } = createKbnUrlTracker({
       baseUrl: core.http.basePath.prepend('/app/kibana'),
       defaultSubUrl: '#/visualize',
@@ -96,12 +95,19 @@ export class VisualizePlugin implements Plugin {
       stateParams: [
         {
           kbnUrlKey: '_g',
-          stateUpdate$: querySyncStateContainer.state$,
+          stateUpdate$: data.query.state$.pipe(
+            filter(
+              ({ changes }) => !!(changes.globalFilters || changes.time || changes.refreshInterval)
+            ),
+            map(({ state }) => ({
+              ...state,
+              filters: state.filters?.filter(esFilters.isFilterPinned),
+            }))
+          ),
         },
       ],
     });
     this.stopUrlTracking = () => {
-      stopQuerySyncStateContainer();
       stopUrlTracker();
     };
 
@@ -134,12 +140,11 @@ export class VisualizePlugin implements Plugin {
           chrome: coreStart.chrome,
           data: dataStart,
           embeddable,
-          getBasePath: core.http.basePath.get,
           indexPatterns: dataStart.indexPatterns,
           localStorage: new Storage(localStorage),
           navigation,
           savedObjectsClient,
-          savedVisualizations: visualizations.getSavedVisualizationsLoader(),
+          savedVisualizations: visualizations.savedVisualizationsLoader,
           savedQueryService: dataStart.query.savedQueries,
           share,
           toastNotifications: coreStart.notifications.toasts,
@@ -150,6 +155,7 @@ export class VisualizePlugin implements Plugin {
           usageCollection,
           I18nContext: coreStart.i18n.Context,
           setActiveUrl,
+          DefaultVisualizationEditor: DefaultEditorController,
         };
         setServices(deps);
 

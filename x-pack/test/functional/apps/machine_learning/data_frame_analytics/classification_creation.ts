@@ -36,7 +36,7 @@ export default function({ getService }: FtrProviderContext) {
         },
         dependentVariable: 'y',
         trainingPercent: '20',
-        modelMemory: '105mb',
+        modelMemory: '200mb',
         createIndexPattern: true,
         expected: {
           row: {
@@ -111,7 +111,7 @@ export default function({ getService }: FtrProviderContext) {
 
         it('creates the analytics job', async () => {
           await ml.dataFrameAnalyticsCreation.assertCreateButtonExists();
-          await ml.dataFrameAnalyticsCreation.createAnalyticsJob();
+          await ml.dataFrameAnalyticsCreation.createAnalyticsJob(testData.jobId);
         });
 
         it('starts the analytics job', async () => {
