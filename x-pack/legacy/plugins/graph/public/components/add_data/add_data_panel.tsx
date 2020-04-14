@@ -113,7 +113,7 @@ function AddDataPanelComponent(props: any) {
                     <EuiAccordion
                       initialIsOpen={true}
                       buttonContent={
-                        <EuiTitle size="xs">
+                        <EuiTitle size="xs" className="gphGraphSidebar__panelTitle">
                           <h4>
                             Add Significant vertices
                             <EuiIconTip
@@ -236,7 +236,7 @@ function AddDataPanelComponent(props: any) {
                     <EuiAccordion
                       initialIsOpen={false}
                       buttonContent={
-                        <EuiTitle size="xs">
+                        <EuiTitle size="xs" className="gphGraphSidebar__panelTitle">
                           <h4>
                             Vertices by field
                             <EuiIconTip
@@ -311,7 +311,7 @@ function AddDataPanelComponent(props: any) {
                     <EuiAccordion
                       initialIsOpen={false}
                       buttonContent={
-                        <EuiTitle size="xs">
+                        <EuiTitle size="xs" className="gphGraphSidebar__panelTitle">
                           <h4>
                             Free vertex
                             <EuiIconTip

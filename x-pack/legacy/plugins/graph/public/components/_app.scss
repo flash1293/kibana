@@ -88,4 +88,12 @@ $sidebarWidth: $euiSizeXXL * 10;
       margin-bottom: $euiSize; /* 1 */
     }
   }
+
+  &__panelTitle {
+    .euiToolTipAnchor {
+      margin-left: $euiSizeXS;
+      position: relative;
+      top: -1px;
+    }
+  }
 }

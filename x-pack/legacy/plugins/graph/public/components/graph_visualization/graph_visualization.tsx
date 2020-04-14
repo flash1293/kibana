@@ -799,7 +799,7 @@ function GraphVisualizationComponent({
               isOpen={open}
               closePopover={() => setOpen(false)}
             >
-              <EuiFormRow label="Minimum number of connections">
+              <EuiFormRow label="Minimum number of documents">
                 <EuiRange
                   value={minDocCount}
                   min={0}
@@ -890,9 +890,10 @@ function GraphVisualizationComponent({
           ) : (
             <EuiFlexGroup gutterSize="s">
               <EuiFlexItem grow={false}>
-                <span
-                  style={{ padding: 4 }}
-                >{`${clientWorkspace.nodes.length} vertices, ${clientWorkspace.edges.length} connections (${filteredEdges.length} connections filtered)`}</span>
+                <span style={{ padding: 4 }}>
+                  <b>{clientWorkspace.nodes.length}</b> vertices,{' '}
+                  <b>{clientWorkspace.edges.length}</b> connections filtered
+                </span>
               </EuiFlexItem>
             </EuiFlexGroup>
           )}
