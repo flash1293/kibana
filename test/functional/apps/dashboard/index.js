@@ -102,10 +102,7 @@ export default function({ getService, loadTestFile }) {
       before(loadLogstash);
       after(unloadLogstash);
 
-      loadTestFile(require.resolve('./dashboard_save'));
-      loadTestFile(require.resolve('./dashboard_time'));
       loadTestFile(require.resolve('./dashboard_listing'));
-      loadTestFile(require.resolve('./dashboard_clone'));
     });
   });
 }
