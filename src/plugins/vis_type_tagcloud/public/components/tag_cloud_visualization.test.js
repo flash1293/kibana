@@ -42,6 +42,21 @@ describe('TagCloudVisualizationTest', function () {
             height: 512,
           };
         },
+      configurable: true,
+    },
+  });
+  Object.defineProperties(window.HTMLElement.prototype, {
+    offsetHeight: {
+      get: function () {
+        return 512;
+      },
+      configurable: true,
+    },
+    offsetWidth: {
+      get: function () {
+        return 512;
+      },
+      configurable: true,
     },
   });
 
@@ -147,8 +162,42 @@ describe('TagCloudVisualizationTest', function () {
         uiState: false,
       });
 
-      domNode.style.width = '256px';
-      domNode.style.height = '368px';
+      Object.defineProperties(window.SVGElement.prototype, {
+        getBBox: {
+          get: () =>
+            function () {
+              return {
+                x: 0,
+                y: 0,
+                width: 256,
+                height: 368,
+              };
+            },
+          configurable: true,
+        },
+        transform: {
+          get: () => ({
+            baseVal: {
+              consolidate: () => {},
+            },
+          }),
+          configurable: true,
+        },
+      });
+      Object.defineProperties(window.HTMLElement.prototype, {
+        offsetHeight: {
+          get: function () {
+            return 386;
+          },
+          configurable: true,
+        },
+        offsetWidth: {
+          get: function () {
+            return 256;
+          },
+          configurable: true,
+        },
+      });
       vis.params.orientation = 'right angled';
       vis.params.minFontSize = 70;
       await tagcloudVisualization.render(dummyTableGroup, vis.params, {
