@@ -4,9 +4,6 @@ exports[`Lens migrations 7.10.0 references should produce a valid document 1`] =
 Object {
   "attributes": Object {
     "state": Object {
-      "datasourceMetaData": Object {
-        "numberFilterableIndexPatterns": 2,
-      },
       "datasourceStates": Object {
         "indexpattern": Object {
           "layers": Object {

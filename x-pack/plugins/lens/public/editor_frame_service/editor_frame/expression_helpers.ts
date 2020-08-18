@@ -5,9 +5,7 @@
  */
 
 import { Ast, fromExpression, ExpressionFunctionAST } from '@kbn/interpreter/common';
-import { DateRange } from '../../../common';
-import { Visualization, Datasource, DatasourcePublicAPI } from '../../types';
-import { Filter, TimeRange, Query } from '../../../../../../src/plugins/data/public';
+import { Visualization, Datasource, FramePublicAPI } from '../../types';
 
 export function prependDatasourceExpression(
   visualizationExpression: Ast | string | null,
@@ -26,7 +24,7 @@ export function prependDatasourceExpression(
     const state = datasourceStates[datasourceId].state;
     const layers = datasource.getLayers(datasourceStates[datasourceId].state);
 
-    layers.forEach((layerId) => {
+    layers.forEach((layerId, index) => {
       const result = datasource.toExpression(state, layerId);
       if (result) {
         datasourceExpressions.push([layerId, result]);
@@ -61,38 +59,14 @@ export function prependDatasourceExpression(
 
   return {
     type: 'expression',
-    chain: [datafetchExpression, ...parsedVisualizationExpression.chain],
-  };
-}
-
-export function prependKibanaContext(
-  expression: Ast | string,
-  {
-    timeRange,
-    query,
-    filters,
-  }: {
-    timeRange?: TimeRange;
-    query?: Query;
-    filters?: Filter[];
-  }
-): Ast {
-  const parsedExpression = typeof expression === 'string' ? fromExpression(expression) : expression;
-
-  return {
-    type: 'expression',
     chain: [
-      { type: 'function', function: 'kibana', arguments: {} },
       {
         type: 'function',
-        function: 'kibana_context',
-        arguments: {
-          timeRange: timeRange ? [JSON.stringify(timeRange)] : [],
-          query: query ? [JSON.stringify(query)] : [],
-          filters: [JSON.stringify(filters || [])],
-        },
+        function: 'kibana',
+        arguments: {},
       },
-      ...parsedExpression.chain,
+      datafetchExpression,
+      ...parsedVisualizationExpression.chain,
     ],
   };
 }
@@ -115,13 +89,7 @@ export function buildExpression({
       state: unknown;
     }
   >;
-  framePublicAPI: {
-    datasourceLayers: Record<string, DatasourcePublicAPI>;
-    query: Query;
-    dateRange?: DateRange;
-    filters: Filter[];
-  };
-
+  framePublicAPI: FramePublicAPI;
   removeDateRange?: boolean;
 }): Ast | null {
   if (visualization === null) {
@@ -132,28 +100,5 @@ export function buildExpression({
     framePublicAPI.datasourceLayers
   );
 
-  const expressionContext = removeDateRange
-    ? { query: framePublicAPI.query, filters: framePublicAPI.filters }
-    : {
-        query: framePublicAPI.query,
-        timeRange: framePublicAPI.dateRange
-          ? {
-              from: framePublicAPI.dateRange.fromDate,
-              to: framePublicAPI.dateRange.toDate,
-            }
-          : undefined,
-        filters: framePublicAPI.filters,
-      };
-
-  const completeExpression = prependDatasourceExpression(
-    visualizationExpression,
-    datasourceMap,
-    datasourceStates
-  );
-
-  if (completeExpression) {
-    return prependKibanaContext(completeExpression, expressionContext);
-  } else {
-    return null;
-  }
+  return prependDatasourceExpression(visualizationExpression, datasourceMap, datasourceStates);
 }

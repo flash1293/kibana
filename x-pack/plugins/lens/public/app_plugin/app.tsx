@@ -519,7 +519,7 @@ export function App({
                 doc: state.persistedDoc,
                 onError,
                 showNoDataPopover,
-                onChange: ({ filterableIndexPatterns, doc, isSaveable }) => {
+                onChange: ({ indexPatternsByLayer, doc, isSaveable }) => {
                   if (isSaveable !== state.isSaveable) {
                     setState((s) => ({ ...s, isSaveable }));
                   }
@@ -527,16 +527,20 @@ export function App({
                     setState((s) => ({ ...s, lastKnownDoc: doc }));
                   }
 
+                  const indexPatternIds = _.uniq(
+                    indexPatternsByLayer.map(({ indexPatternId }) => indexPatternId)
+                  );
+
                   // Update the cached index patterns if the user made a change to any of them
                   if (
-                    state.indexPatternsForTopNav.length !== filterableIndexPatterns.length ||
-                    filterableIndexPatterns.some(
+                    state.indexPatternsForTopNav.length !== indexPatternIds.length ||
+                    indexPatternIds.some(
                       (id) =>
                         !state.indexPatternsForTopNav.find((indexPattern) => indexPattern.id === id)
                     )
                   ) {
                     getAllIndexPatterns(
-                      filterableIndexPatterns,
+                      indexPatternIds,
                       data.indexPatterns,
                       core.notifications
                     ).then((indexPatterns) => {

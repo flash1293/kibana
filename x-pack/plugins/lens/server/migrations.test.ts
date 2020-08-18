@@ -424,9 +424,14 @@ describe('Lens migrations', () => {
       type: 'lens',
     };
 
-    it('should remove expression', () => {
+    it('should remove search context from the expression', () => {
       const result = migrations['7.10.0'](example, context);
-      expect(result.attributes.expression).toBeUndefined();
+      expect(result.attributes.expression).not.toContain('kibana_context');
+    });
+
+    it('should include a variable instead of index pattern id', () => {
+      const result = migrations['7.10.0'](example, context);
+      expect(result.attributes.expression).toContain('index={var name=');
     });
 
     it('should list references for layers', () => {
@@ -467,10 +472,9 @@ describe('Lens migrations', () => {
       ).toEqual('ff959d40-b880-11e8-a6d9-e546fe2bba5f');
     });
 
-    it('should remove filterable index patterns', () => {
+    it('should remove metadata', () => {
       const result = migrations['7.10.0'](example, context);
-      expect(result.attributes.state.datasourceMetaData.filterableIndexPatterns).toBeUndefined();
-      expect(result.attributes.state.datasourceMetaData.numberFilterableIndexPatterns).toEqual(2);
+      expect(result.attributes.state.datasourceMetaData).toBeUndefined();
     });
 
     it('should list references for filters', () => {

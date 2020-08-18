@@ -44,7 +44,7 @@ export interface EditorFrameProps {
   // Frame loader (app or embeddable) is expected to call this when it loads and updates
   // This should be replaced with a top-down state
   onChange: (newState: {
-    filterableIndexPatterns: DatasourceMetaData['filterableIndexPatterns'];
+    indexPatternsByLayer: DatasourceMetaData['indexPatternsByLayer'];
     doc: Document;
     isSaveable: boolean;
   }) => void;
@@ -131,7 +131,7 @@ export interface DatasourceSuggestion<T = unknown> {
 }
 
 export interface DatasourceMetaData {
-  filterableIndexPatterns: string[];
+  indexPatternsByLayer: Array<{ layerId: string; indexPatternId: string; refName: string }>;
 }
 
 export type StateSetter<T> = (newState: T | ((prevState: T) => T)) => void;

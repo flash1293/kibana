@@ -18,10 +18,8 @@ export interface Document {
   visualizationType: string | null;
   title: string;
   description?: string;
+  expression: string | null;
   state: {
-    datasourceMetaData: {
-      numberFilterableIndexPatterns: number;
-    };
     datasourceStates: Record<string, unknown>;
     visualization: unknown;
     query: Query;

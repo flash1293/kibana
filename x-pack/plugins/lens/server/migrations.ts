@@ -49,9 +49,6 @@ interface LensDocShape<VisualizationState = unknown> {
   visualizationType: string | null;
   title: string;
   state: {
-    datasourceMetaData: {
-      numberFilterableIndexPatterns: number;
-    };
     datasourceStates: {
       // This is hardcoded as our only datasource
       indexpattern: {
@@ -309,9 +306,6 @@ const extractReferences: SavedObjectMigrationFn<LensDocShapePre710, LensDocShape
       visualizationType: attributes.visualizationType,
       title: attributes.title,
       state: {
-        datasourceMetaData: {
-          numberFilterableIndexPatterns: uniqueFilterableIndexPatterns.length,
-        },
         datasourceStates: {
           indexpattern: {
             layers: persistableLayers,

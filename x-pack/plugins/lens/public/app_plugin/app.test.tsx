@@ -315,7 +315,6 @@ describe('Lens App', () => {
         state: {
           query: 'fake query',
           filters: [{ query: { match_phrase: { src: 'test' } } }],
-          datasourceMetaData: { numberFilterableIndexPatterns: 1 },
         },
         references: [{ type: 'index-pattern', id: '1', name: 'filterable-index-pattern-0' }],
       });
@@ -478,7 +477,7 @@ describe('Lens App', () => {
         const onChange = frame.mount.mock.calls[0][1].onChange;
         act(() =>
           onChange({
-            filterableIndexPatterns: [],
+            indexPatternsByLayer: [],
             doc: { id: initialDocId, ...lastKnownDoc } as Document,
             isSaveable: true,
           })
@@ -513,7 +512,7 @@ describe('Lens App', () => {
         const onChange = frame.mount.mock.calls[0][1].onChange;
         act(() =>
           onChange({
-            filterableIndexPatterns: [],
+            indexPatternsByLayer: [],
             doc: ({ id: 'will save this' } as unknown) as Document,
             isSaveable: true,
           })
@@ -533,7 +532,7 @@ describe('Lens App', () => {
         const onChange = frame.mount.mock.calls[0][1].onChange;
         act(() =>
           onChange({
-            filterableIndexPatterns: [],
+            indexPatternsByLayer: [],
             doc: ({ id: 'will save this' } as unknown) as Document,
             isSaveable: true,
           })
@@ -616,7 +615,7 @@ describe('Lens App', () => {
         const onChange = frame.mount.mock.calls[0][1].onChange;
         act(() =>
           onChange({
-            filterableIndexPatterns: [],
+            indexPatternsByLayer: [],
             doc: ({ id: undefined } as unknown) as Document,
             isSaveable: true,
           })
@@ -696,7 +695,7 @@ describe('Lens App', () => {
         const onChange = frame.mount.mock.calls[0][1].onChange;
         await act(async () =>
           onChange({
-            filterableIndexPatterns: [],
+            indexPatternsByLayer: [],
             doc: ({ id: '123' } as unknown) as Document,
             isSaveable: true,
           })
@@ -736,7 +735,7 @@ describe('Lens App', () => {
         const onChange = frame.mount.mock.calls[0][1].onChange;
         await act(async () =>
           onChange({
-            filterableIndexPatterns: [],
+            indexPatternsByLayer: [],
             doc: ({} as unknown) as Document,
             isSaveable: true,
           })
@@ -806,7 +805,7 @@ describe('Lens App', () => {
 
       await act(async () => {
         onChange({
-          filterableIndexPatterns: ['1'],
+          indexPatternsByLayer: [{ layerId: 'a', indexPatternId: '1', refName: 'ref-1' }],
           doc: ({ id: undefined } as unknown) as Document,
           isSaveable: true,
         });
@@ -825,7 +824,7 @@ describe('Lens App', () => {
 
       await act(async () => {
         onChange({
-          filterableIndexPatterns: ['2'],
+          indexPatternsByLayer: [{ layerId: 'a', indexPatternId: '2', refName: 'ref-2' }],
           doc: ({ id: undefined } as unknown) as Document,
           isSaveable: true,
         });
@@ -1097,7 +1096,7 @@ describe('Lens App', () => {
       const onChange = frame.mount.mock.calls[0][1].onChange;
       act(() =>
         onChange({
-          filterableIndexPatterns: [],
+          indexPatternsByLayer: [],
           doc: ({ id: undefined } as unknown) as Document,
           isSaveable: true,
         })
@@ -1119,7 +1118,7 @@ describe('Lens App', () => {
       const onChange = frame.mount.mock.calls[0][1].onChange;
       act(() =>
         onChange({
-          filterableIndexPatterns: [],
+          indexPatternsByLayer: [],
           doc: ({ id: undefined, state: {} } as unknown) as Document,
           isSaveable: true,
         })
@@ -1144,7 +1143,7 @@ describe('Lens App', () => {
       const onChange = frame.mount.mock.calls[0][1].onChange;
       act(() =>
         onChange({
-          filterableIndexPatterns: [],
+          indexPatternsByLayer: [],
           doc: ({ id: '1234' } as unknown) as Document,
           isSaveable: true,
         })
@@ -1169,7 +1168,7 @@ describe('Lens App', () => {
       const onChange = frame.mount.mock.calls[0][1].onChange;
       act(() =>
         onChange({
-          filterableIndexPatterns: [],
+          indexPatternsByLayer: [],
           doc: ({
             id: '1234',
             title: 'My cool doc',
@@ -1202,7 +1201,7 @@ describe('Lens App', () => {
       const onChange = frame.mount.mock.calls[0][1].onChange;
       act(() =>
         onChange({
-          filterableIndexPatterns: [],
+          indexPatternsByLayer: [],
           doc: ({ id: '1234' } as unknown) as Document,
           isSaveable: true,
         })

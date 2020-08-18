@@ -27,6 +27,12 @@ import { generateId } from '../../id_generator';
 import { Filter, Query, SavedQuery } from '../../../../../../src/plugins/data/public';
 import { EditorFrameStartPlugins } from '../service';
 
+export interface OnChangeProp {
+  indexPatternsByLayer: DatasourceMetaData['indexPatternsByLayer'];
+  doc: Document;
+  isSaveable: boolean;
+}
+
 export interface EditorFrameProps {
   doc?: Document;
   datasourceMap: Record<string, Datasource>;
@@ -44,11 +50,7 @@ export interface EditorFrameProps {
   query: Query;
   filters: Filter[];
   savedQuery?: SavedQuery;
-  onChange: (arg: {
-    filterableIndexPatterns: DatasourceMetaData['filterableIndexPatterns'];
-    doc: Document;
-    isSaveable: boolean;
-  }) => void;
+  onChange: (arg: OnChangeProp) => void;
   showNoDataPopover: () => void;
 }
 
@@ -220,20 +222,20 @@ export function EditorFrame(props: EditorFrameProps) {
         return;
       }
 
-      const { filterableIndexPatterns, doc, isSaveable } = getSavedObjectFormat({
-        activeDatasources: Object.keys(state.datasourceStates).reduce(
-          (datasourceMap, datasourceId) => ({
-            ...datasourceMap,
-            [datasourceId]: props.datasourceMap[datasourceId],
-          }),
-          {}
-        ),
-        visualization: activeVisualization,
-        state,
-        framePublicAPI,
-      });
-
-      props.onChange({ filterableIndexPatterns, doc, isSaveable });
+      props.onChange(
+        getSavedObjectFormat({
+          activeDatasources: Object.keys(state.datasourceStates).reduce(
+            (datasourceMap, datasourceId) => ({
+              ...datasourceMap,
+              [datasourceId]: props.datasourceMap[datasourceId],
+            }),
+            {}
+          ),
+          visualization: activeVisualization,
+          state,
+          framePublicAPI,
+        })
+      );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [

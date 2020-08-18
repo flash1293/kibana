@@ -89,7 +89,7 @@ const setLastUsedIndexPatternId = (storage: IStorageWrapper, value: string) => {
 };
 
 const CURRENT_PATTERN_REFERENCE_NAME = 'indexpattern-datasource-current-indexpattern';
-function getLayerReferenceName(layerId: string) {
+export function getLayerReferenceName(layerId: string) {
   return `indexpattern-datasource-layer-${layerId}`;
 }
 

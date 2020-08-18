@@ -28,7 +28,8 @@ import {
   ReactExpressionRendererProps,
   ReactExpressionRendererType,
 } from '../../../../../../src/plugins/expressions/public';
-import { prependDatasourceExpression, prependKibanaContext } from './expression_helpers';
+import { ExecutionContextSearch } from '../../../../../../src/plugins/expressions/common';
+import { prependDatasourceExpression } from './expression_helpers';
 import { debouncedComponent } from '../../debounced_component';
 import { trackUiEvent, trackSuggestionEvent } from '../../lens_ui_telemetry';
 import { DataPublicPluginStart } from '../../../../../../src/plugins/data/public';
@@ -213,12 +214,40 @@ export function SuggestionPanel({
     visualizationMap,
   ]);
 
+  const variables = useMemo(() => {
+    const indexPatternRefs: Record<string, string> = {};
+    Object.entries(datasourceMap).forEach(([datasourceId, datasource]) => {
+      const state = datasourceStates[datasourceId].state;
+      datasource
+        .getMetaData(state)
+        .indexPatternsByLayer.forEach(({ layerId, indexPatternId, refName }, index) => {
+          indexPatternRefs[`filterable-index-pattern-${index}`] = indexPatternId;
+          indexPatternRefs[refName] = indexPatternId;
+        });
+    });
+    return indexPatternRefs;
+  }, [datasourceMap, datasourceStates]);
+
+  const context: ExecutionContextSearch = {
+    query: frame.query,
+    timeRange: {
+      from: frame.dateRange.fromDate,
+      to: frame.dateRange.toDate,
+    },
+    filters: frame.filters,
+  };
+
   const AutoRefreshExpressionRenderer = useMemo(() => {
     const autoRefreshFetch$ = plugins.data.query.timefilter.timefilter.getAutoRefreshFetch$();
     return (props: ReactExpressionRendererProps) => (
-      <ExpressionRendererComponent {...props} reload$={autoRefreshFetch$} />
+      <ExpressionRendererComponent
+        {...props}
+        searchContext={context}
+        variables={variables}
+        reload$={autoRefreshFetch$}
+      />
     );
-  }, [plugins.data.query.timefilter.timefilter]);
+  }, [plugins.data.query.timefilter.timefilter, variables, context]);
 
   const [lastSelectedSuggestion, setLastSelectedSuggestion] = useState<number>(-1);
 
@@ -249,15 +278,6 @@ export function SuggestionPanel({
       });
     }
   }
-
-  const expressionContext = {
-    query: frame.query,
-    filters: frame.filters,
-    timeRange: {
-      from: frame.dateRange.fromDate,
-      to: frame.dateRange.toDate,
-    },
-  };
 
   return (
     <div className="lnsSuggestionPanel">
@@ -303,9 +323,7 @@ export function SuggestionPanel({
         {currentVisualizationId && (
           <SuggestionPreview
             preview={{
-              expression: currentStateExpression
-                ? prependKibanaContext(currentStateExpression, expressionContext)
-                : undefined,
+              expression: currentStateExpression ?? undefined,
               icon:
                 visualizationMap[currentVisualizationId].getDescription(currentVisualizationState)
                   .icon || 'empty',
@@ -323,9 +341,7 @@ export function SuggestionPanel({
           return (
             <SuggestionPreview
               preview={{
-                expression: suggestion.previewExpression
-                  ? prependKibanaContext(suggestion.previewExpression, expressionContext)
-                  : undefined,
+                expression: suggestion.previewExpression ?? undefined,
                 icon: suggestion.previewIcon,
                 title: suggestion.title,
               }}

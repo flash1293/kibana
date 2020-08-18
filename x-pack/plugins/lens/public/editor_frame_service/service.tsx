@@ -68,10 +68,6 @@ export class EditorFrameService {
 
     const getStartServices = async () => {
       const [coreStart, deps] = await core.getStartServices();
-      const [resolvedDatasources, resolvedVisualizations] = await Promise.all([
-        collectAsyncDefinitions(this.datasources),
-        collectAsyncDefinitions(this.visualizations),
-      ]);
       return {
         capabilities: coreStart.application.capabilities,
         savedObjectsClient: coreStart.savedObjects.client,
@@ -80,8 +76,6 @@ export class EditorFrameService {
         expressionRenderer: deps.expressions.ReactExpressionRenderer,
         indexPatternService: deps.data.indexPatterns,
         uiActions: deps.uiActions,
-        datasources: resolvedDatasources,
-        visualizations: resolvedVisualizations,
       };
     };
 

@@ -24,6 +24,7 @@ import {
   changeIndexPattern,
   changeLayerIndexPattern,
   extractReferences,
+  getLayerReferenceName,
 } from './loader';
 import { toExpression } from './to_expression';
 import {
@@ -191,9 +192,11 @@ export function getIndexPatternDatasource({
 
     getMetaData(state: IndexPatternPrivateState) {
       return {
-        filterableIndexPatterns: _.uniq(
-          Object.values(state.layers).map((layer) => layer.indexPatternId)
-        ),
+        indexPatternsByLayer: Object.entries(state.layers).map(([id, layer]) => ({
+          layerId: id,
+          indexPatternId: layer.indexPatternId,
+          refName: getLayerReferenceName(id),
+        })),
       };
     },
 

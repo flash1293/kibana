@@ -22,6 +22,7 @@ import {
   ExpressionRendererEvent,
   ReactExpressionRendererType,
 } from '../../../../../../../src/plugins/expressions/public';
+import { ExecutionContextSearch } from '../../../../../../../src/plugins/expressions/common';
 import { Action } from '../state_management';
 import {
   Datasource,
@@ -148,6 +149,30 @@ export function InnerWorkspacePanel({
     ]
   );
 
+  const variables = useMemo(() => {
+    const indexPatternRefs: Record<string, string> = {};
+
+    Object.entries(datasourceMap).forEach(([datasourceId, datasource]) => {
+      const state = datasourceStates[datasourceId].state;
+      datasource
+        .getMetaData(state)
+        .indexPatternsByLayer.forEach(({ layerId, indexPatternId, refName }, index) => {
+          indexPatternRefs[`filterable-index-pattern-${index}`] = indexPatternId;
+          indexPatternRefs[refName] = indexPatternId;
+        });
+    });
+    return indexPatternRefs;
+  }, [datasourceMap, datasourceStates]);
+
+  const context: ExecutionContextSearch = {
+    query: framePublicAPI.query,
+    timeRange: {
+      from: framePublicAPI.dateRange.fromDate,
+      to: framePublicAPI.dateRange.toDate,
+    },
+    filters: framePublicAPI.filters,
+  };
+
   const onEvent = useCallback(
     (event: ExpressionRendererEvent) => {
       if (!plugins.uiActions) {
@@ -266,6 +291,8 @@ export function InnerWorkspacePanel({
           expression={expression!}
           reload$={autoRefreshFetch$}
           onEvent={onEvent}
+          searchContext={context}
+          variables={variables}
           renderError={(errorMessage?: string | null) => {
             return (
               <EuiFlexGroup direction="column" alignItems="center">

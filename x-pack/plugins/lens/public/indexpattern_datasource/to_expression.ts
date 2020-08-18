@@ -14,7 +14,8 @@ import { dateHistogramOperation } from './operations/definitions';
 function getExpressionForLayer(
   indexPattern: IndexPattern,
   columns: Record<string, IndexPatternColumn>,
-  columnOrder: string[]
+  columnOrder: string[],
+  layerId: string
 ): Ast | null {
   if (columnOrder.length === 0) {
     return null;
@@ -99,7 +100,20 @@ function getExpressionForLayer(
           type: 'function',
           function: 'esaggs',
           arguments: {
-            index: [indexPattern.id],
+            index: [
+              {
+                type: 'expression',
+                chain: [
+                  {
+                    type: 'function',
+                    function: 'var',
+                    arguments: {
+                      name: [`indexpattern-datasource-layer-${layerId}`],
+                    },
+                  },
+                ],
+              },
+            ],
             metricsAtAllLevels: [true],
             partialRows: [true],
             includeFormatHints: [true],
@@ -127,7 +141,8 @@ export function toExpression(state: IndexPatternPrivateState, layerId: string) {
     return getExpressionForLayer(
       state.indexPatterns[state.layers[layerId].indexPatternId],
       state.layers[layerId].columns,
-      state.layers[layerId].columnOrder
+      state.layers[layerId].columnOrder,
+      layerId
     );
   }
 

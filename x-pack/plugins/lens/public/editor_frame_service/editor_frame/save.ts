@@ -5,12 +5,13 @@
  */
 
 import _ from 'lodash';
+import { toExpression } from '@kbn/interpreter/target/common';
 import { SavedObjectReference } from 'kibana/public';
 import { EditorFrameState } from './state_management';
-import { Document } from '../../persistence/saved_object_store';
 import { Datasource, Visualization, FramePublicAPI, DatasourceMetaData } from '../../types';
-import { extractFilterReferences, filterableIndexPatternIdsToReferences } from '../../persistence';
+import { extractFilterReferences } from '../../persistence';
 import { buildExpression } from './expression_helpers';
+import { OnChangeProp } from './editor_frame';
 
 export interface Props {
   activeDatasources: Record<string, Datasource>;
@@ -24,31 +25,20 @@ export function getSavedObjectFormat({
   state,
   visualization,
   framePublicAPI,
-}: Props): {
-  doc: Document;
-  filterableIndexPatterns: DatasourceMetaData['filterableIndexPatterns'];
-  isSaveable: boolean;
-} {
+}: Props): OnChangeProp {
   const datasourceStates: Record<string, unknown> = {};
   const references: SavedObjectReference[] = [];
+  const indexPatternsByLayer: DatasourceMetaData['indexPatternsByLayer'] = [];
   Object.entries(activeDatasources).forEach(([id, datasource]) => {
     const { state: persistableState, savedObjectReferences } = datasource.getPersistableState(
       state.datasourceStates[id].state
     );
     datasourceStates[id] = persistableState;
     references.push(...savedObjectReferences);
-  });
-
-  const filterableIndexPatterns: string[] = [];
-  Object.entries(activeDatasources).forEach(([id, datasource]) => {
-    filterableIndexPatterns.push(
-      ...datasource.getMetaData(state.datasourceStates[id].state).filterableIndexPatterns
+    indexPatternsByLayer.push(
+      ...datasource.getMetaData(state.datasourceStates[id].state).indexPatternsByLayer
     );
   });
-
-  const uniqueFilterableIndexPatternIds = _.uniq(filterableIndexPatterns);
-
-  references.push(...filterableIndexPatternIdsToReferences(uniqueFilterableIndexPatternIds));
 
   const { persistableFilters, references: filterReferences } = extractFilterReferences(
     framePublicAPI.filters
@@ -72,18 +62,16 @@ export function getSavedObjectFormat({
       description: state.description,
       type: 'lens',
       visualizationType: state.visualization.activeId,
+      expression: expression ? toExpression(expression) : null,
       state: {
         datasourceStates,
-        datasourceMetaData: {
-          numberFilterableIndexPatterns: uniqueFilterableIndexPatternIds.length,
-        },
         visualization: state.visualization.state,
         query: framePublicAPI.query,
         filters: persistableFilters,
       },
       references,
     },
-    filterableIndexPatterns,
+    indexPatternsByLayer,
     isSaveable: expression !== null,
   };
 }
