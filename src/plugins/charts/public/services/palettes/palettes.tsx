@@ -33,6 +33,7 @@ import {
   euiPaletteForTemperature,
   euiPaletteComplimentary,
 } from '@elastic/eui';
+import { flatten } from 'lodash';
 import { ChartsPluginSetup } from '../../../../../../src/plugins/charts/public';
 import { lightenColor } from './lighten_color';
 import { ChartColorConfiguration, PaletteDefinition, SeriesLayer } from './types';
@@ -43,14 +44,14 @@ function buildRoundRobinCategoricalWithMappedColors(
   uiSettings: IUiSettingsClient
 ): Omit<PaletteDefinition, 'title'> {
   const mappedColors = new MappedColors(uiSettings, (num: number) => {
-    return euiPaletteColorBlind({ rotations: Math.ceil(num / 10) }).map((color) =>
+    return flatten(new Array(Math.ceil(num / 10)).fill(euiPaletteColorBlind())).map((color) =>
       color.toLowerCase()
     );
   });
   const mappedBehindTextColors = new MappedColors(uiSettings, (num: number) => {
-    return euiPaletteColorBlindBehindText({ rotations: Math.ceil(num / 10) }).map((color) =>
-      color.toLowerCase()
-    );
+    return flatten(
+      new Array(Math.ceil(num / 10)).fill(euiPaletteColorBlindBehindText())
+    ).map((color) => color.toLowerCase());
   });
   function getColor(
     series: SeriesLayer[],
