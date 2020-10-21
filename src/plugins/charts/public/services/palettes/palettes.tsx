@@ -37,17 +37,30 @@ import { ChartsPluginSetup } from '../../../../../../src/plugins/charts/public';
 import { lightenColor } from './lighten_color';
 import { ChartColorConfiguration, PaletteDefinition, SeriesLayer } from './types';
 import { LegacyColorsService } from '../legacy_colors';
+import { MappedColors } from '../mapped_colors';
 
-function buildRoundRobinCategoricalWithMappedColors(): Omit<PaletteDefinition, 'title'> {
-  const colors = euiPaletteColorBlind({ rotations: 3 });
-  const behindTextColors = euiPaletteColorBlindBehindText({ rotations: 3 });
+function buildRoundRobinCategoricalWithMappedColors(
+  uiSettings: IUiSettingsClient
+): Omit<PaletteDefinition, 'title'> {
+  const mappedColors = new MappedColors(uiSettings, (num: number) => {
+    return euiPaletteColorBlind({ rotations: Math.ceil(num / 10) }).map((color) =>
+      color.toLowerCase()
+    );
+  });
+  const mappedBehindTextColors = new MappedColors(uiSettings, (num: number) => {
+    return euiPaletteColorBlindBehindText({ rotations: Math.ceil(num / 10) }).map((color) =>
+      color.toLowerCase()
+    );
+  });
   function getColor(
     series: SeriesLayer[],
     chartConfiguration: ChartColorConfiguration = { behindText: false }
   ) {
+    mappedColors.mapKeys([series[0].name]);
+    mappedBehindTextColors.mapKeys([series[0].name]);
     const outputColor = chartConfiguration.behindText
-      ? behindTextColors[series[0].rankAtDepth % behindTextColors.length]
-      : colors[series[0].rankAtDepth % colors.length];
+      ? mappedBehindTextColors.get(series[0].name)
+      : mappedColors.get(series[0].name);
 
     if (!chartConfiguration.maxDepth || chartConfiguration.maxDepth === 1) {
       return outputColor;
@@ -193,7 +206,7 @@ export const buildPalettes: (
       title: i18n.translate('charts.palettes.defaultPaletteLabel', {
         defaultMessage: 'Default',
       }),
-      ...buildRoundRobinCategoricalWithMappedColors(),
+      ...buildRoundRobinCategoricalWithMappedColors(uiSettings),
     },
     status: {
       title: i18n.translate('charts.palettes.statusLabel', { defaultMessage: 'Status' }),
