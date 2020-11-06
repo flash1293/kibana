@@ -756,7 +756,7 @@ describe('ranges', () => {
         });
 
         state.indexPatterns['1'].fieldFormatMap = {
-          MyField: { id: 'custom', params: {} },
+          MyField: { id: 'number', params: {} },
         };
 
         // now set a format on the range operation
