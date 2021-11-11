@@ -342,10 +342,9 @@ export function SuggestionPanel({
   const [localSuggestions, setLocalSuggestions] = useState<typeof suggestions>([]);
 
   useEffect(() => {
-    if (frame.activeData && !isEqual(sortBy(localSuggestions), sortBy(suggestionsRef.current))) {
+    if (frame.activeData) {
       setLocalSuggestions(suggestionsRef.current);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frame.activeData]);
 
   const [lastSelectedSuggestion, setLastSelectedSuggestion] = useState<number>(-1);
