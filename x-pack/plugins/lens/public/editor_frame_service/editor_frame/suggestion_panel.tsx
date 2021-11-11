@@ -127,20 +127,20 @@ const PreviewRenderer = ({
         'lnsSuggestionPanel__chartWrapper--withLabel': withLabel,
       })}
     >
-      {!isCurrentVis &&
-        (expression !== localParams.expression ||
-          !isEqual(searchContext, localParams.searchContext)) && (
-          <EuiProgress size="xs" color="accent" position="absolute" />
-        )}
+      {(expression !== localParams.expression ||
+        !isEqual(searchContext, localParams.searchContext) ||
+        localParams.searchSessionId !== searchSessionId) && (
+        <EuiProgress size="xs" color="accent" position="absolute" />
+      )}
       {!expression || hasError ? (
         onErrorMessage
       ) : (
         <ExpressionRendererComponent
           className="lnsSuggestionPanel__expressionRenderer"
           padding="s"
-          expression={isCurrentVis ? expression : localParams.expression}
-          searchContext={isCurrentVis ? searchContext : localParams.searchContext}
-          searchSessionId={isCurrentVis ? searchSessionId : localParams.searchSessionId}
+          expression={localParams.expression}
+          searchContext={localParams.searchContext}
+          searchSessionId={localParams.searchSessionId}
           renderError={() => {
             return onErrorMessage;
           }}
@@ -312,7 +312,7 @@ export function SuggestionPanel({
             frame
           )
         : undefined;
-        
+
     return {
       suggestions: newSuggestions,
       currentStateExpression: newStateExpression,
@@ -336,6 +336,17 @@ export function SuggestionPanel({
 
   const sessionIdRef = useRef<string>(searchSessionId);
   sessionIdRef.current = searchSessionId;
+
+  const suggestionsRef = useRef(suggestions);
+  suggestionsRef.current = suggestions;
+  const [localSuggestions, setLocalSuggestions] = useState<typeof suggestions>([]);
+
+  useEffect(() => {
+    if (frame.activeData && !isEqual(sortBy(localSuggestions), sortBy(suggestionsRef.current))) {
+      setLocalSuggestions(suggestionsRef.current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frame.activeData]);
 
   const [lastSelectedSuggestion, setLastSelectedSuggestion] = useState<number>(-1);
 
@@ -431,7 +442,7 @@ export function SuggestionPanel({
             />
           )}
           {!hideSuggestions &&
-            suggestions.map((suggestion, index) => {
+            localSuggestions.map((suggestion, index) => {
               return (
                 <SuggestionPreview
                   preview={{
