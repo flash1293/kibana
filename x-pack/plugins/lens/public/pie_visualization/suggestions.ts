@@ -308,6 +308,7 @@ export function suggestions({
     .sort((a, b) => b.score - a.score)
     .map((suggestion) => ({
       ...suggestion,
+      score: incompleteConfiguration ? 0 : suggestion.score,
       hide: incompleteConfiguration || suggestion.hide,
     }));
 }

@@ -324,7 +324,7 @@ describe('suggestions', () => {
       expect(results.length).toEqual(0);
     });
 
-    it('should hide suggestions when there are no buckets', () => {
+    it('should hide suggestions and set score to zero when there are no buckets', () => {
       const currentSuggestions = suggestions({
         table: {
           layerId: 'first',
@@ -342,6 +342,7 @@ describe('suggestions', () => {
       });
       expect(currentSuggestions).toHaveLength(5);
       expect(currentSuggestions.every((s) => s.hide)).toEqual(true);
+      expect(currentSuggestions.every((s) => s.score === 0)).toEqual(true);
     });
 
     it('should hide suggestions when there are no metrics', () => {
