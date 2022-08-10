@@ -10,5 +10,6 @@
     "name": "App Services",
     "githubTeam": "kibana-app-services"
   },
+  "doNotLoadIfThisCapabilityIsFalsy": ["management.kibana.indexPatterns"],
   "description": "Data view management app"
 }

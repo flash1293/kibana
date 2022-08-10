@@ -33,7 +33,11 @@ export function read(name: string) {
   const exportId = `plugin/${name}/public`;
 
   if (!coreWindow.__kbnBundles__.has(exportId)) {
-    throw new Error(`Definition of plugin "${name}" not found and may have failed to load.`);
+    // throw new Error(`Definition of plugin "${name}" not found and may have failed to load.`);
+    return () => ({
+      setup: () => {},
+      start: () => {},
+    });
   }
 
   const pluginExport = coreWindow.__kbnBundles__.get(exportId);

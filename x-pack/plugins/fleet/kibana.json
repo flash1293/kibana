@@ -8,6 +8,7 @@
   "server": true,
   "ui": true,
   "configPath": ["xpack", "fleet"],
+  "doNotLoadIfThisCapabilityIsFalsy": ["fleet.read"],
   "requiredPlugins": ["licensing", "data", "encryptedSavedObjects", "navigation", "customIntegrations", "share", "spaces", "security", "unifiedSearch", "savedObjectsTagging"],
   "optionalPlugins": ["features", "cloud", "usageCollection", "home", "globalSearch", "telemetry", "discover", "ingestPipelines"],
   "extraPublicDirs": ["common"],

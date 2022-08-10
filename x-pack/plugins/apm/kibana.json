@@ -34,6 +34,7 @@
     "taskManager",
     "usageCollection"
   ],
+  "doNotLoadIfThisCapabilityIsFalsy": ["apm.show"],
   "server": true,
   "ui": true,
   "configPath": [

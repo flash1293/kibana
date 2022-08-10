@@ -53,6 +53,7 @@ const KNOWN_MANIFEST_FIELDS = (() => {
     owner: true,
     description: true,
     enabledOnAnonymousPages: true,
+    doNotLoadIfThisCapabilityIsFalsy: true,
   };
 
   return new Set(Object.keys(manifestFields));
@@ -214,6 +215,7 @@ export async function parseManifest(
     extraPublicDirs: manifest.extraPublicDirs,
     owner: manifest.owner!,
     description: manifest.description,
+    doNotLoadIfThisCapabilityIsFalsy: manifest.doNotLoadIfThisCapabilityIsFalsy,
     enabledOnAnonymousPages: manifest.enabledOnAnonymousPages,
   };
 }

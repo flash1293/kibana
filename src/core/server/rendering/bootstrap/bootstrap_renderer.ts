@@ -10,6 +10,8 @@ import { createHash } from 'crypto';
 import { PackageInfo } from '@kbn/config';
 import { ThemeVersion } from '@kbn/ui-shared-deps-npm';
 import type { KibanaRequest, HttpAuth } from '@kbn/core-http-server';
+import { CapabilitiesStart } from '@kbn/core-capabilities-server';
+import { get, pick } from 'lodash';
 import { UiPlugins } from '../../plugins';
 import { IUiSettingsClient } from '../../ui_settings';
 import { getPluginsBundlePaths } from './get_plugin_bundle_paths';
@@ -25,6 +27,7 @@ interface FactoryOptions {
   packageInfo: PackageInfo;
   uiPlugins: UiPlugins;
   auth: HttpAuth;
+  getCaps?: () => CapabilitiesStart | undefined;
 }
 
 interface RenderedOptions {
@@ -43,6 +46,7 @@ export const bootstrapRendererFactory: BootstrapRendererFactory = ({
   serverBasePath,
   uiPlugins,
   auth,
+  getCaps,
 }) => {
   const isAuthenticated = (request: KibanaRequest) => {
     const { status: authStatus } = auth.get(request);
@@ -87,10 +91,58 @@ export const bootstrapRendererFactory: BootstrapRendererFactory = ({
       ),
     });
 
+    const caps = await getCaps?.()?.resolveCapabilities(request);
+    const excludablePlugins = [...uiPlugins.public.values()].filter((plugin) => {
+      const capPath = plugin.doNotLoadIfThisCapabilityIsFalsy as undefined | string[];
+      if (!capPath) return false;
+      return capPath.every((p) => !Boolean(get(caps, p)));
+    });
+    const excludable = new Set<string>();
+    excludablePlugins.forEach((p) => {
+      excludable.add(p.id);
+    });
+    const deps = new Map<string, Set<string>>();
+    const reverse = new Map<string, Set<string>>();
+    uiPlugins.public.forEach((plugin) => {
+      reverse.set(plugin.id, new Set());
+      deps.set(
+        plugin.id,
+        new Set([...(plugin.requiredPlugins || []), ...(plugin.requiredBundles || [])])
+      );
+    });
+    deps.forEach((d, id) => {
+      d.forEach((dep) => {
+        reverse.get(dep)!.add(id);
+      });
+    });
+    function subgraph(id: string) {
+      const visited = new Set<string>();
+      function traverse(target: string) {
+        visited.add(target);
+        reverse.get(target)!.forEach((dep) => {
+          if (!visited.has(dep)) {
+            traverse(dep);
+          }
+        });
+      }
+      traverse(id);
+      return visited;
+    }
+    const excludableAndNotDependedOnPlugins = excludablePlugins.filter((p) =>
+      [...subgraph(p.id).values()].every((i) => excludable.has(i))
+    );
+    console.log(excludableAndNotDependedOnPlugins.map((p) => p.id));
+    console.log(caps);
+    // console.log(caps);
+    // uiPlugins.pulic contains the graph
+    // TODO match the graph with the capabilities and prune everything that doesn't have required capabilities and is also not dependent on something that does
+
     const body = renderTemplate({
       themeTag,
       jsDependencyPaths,
       publicPathMap,
+      caps: caps!,
+      excludableAndNotDependedOnPlugins: excludableAndNotDependedOnPlugins.map((p) => p.id),
     });
 
     const hash = createHash('sha1');

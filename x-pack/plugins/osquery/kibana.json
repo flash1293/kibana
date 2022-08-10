@@ -20,6 +20,7 @@
     "triggersActionsUi",
     "security"
   ],
+  "doNotLoadIfThisCapabilityIsFalsy": ["osquery.read"],
   "server": true,
   "ui": true,
   "version": "8.0.0"

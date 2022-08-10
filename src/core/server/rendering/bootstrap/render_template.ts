@@ -6,16 +6,22 @@
  * Side Public License, v 1.
  */
 
+import { Capabilities } from '@kbn/core-capabilities-common';
+
 export interface BootstrapTemplateData {
   themeTag: string;
   jsDependencyPaths: string[];
   publicPathMap: string;
+  caps: Capabilities;
+  excludableAndNotDependedOnPlugins: string[];
 }
 
 export const renderTemplate = ({
   themeTag,
   jsDependencyPaths,
   publicPathMap,
+  caps,
+  excludableAndNotDependedOnPlugins,
 }: BootstrapTemplateData) => {
   return `
 function kbnBundlesLoader() {
@@ -125,7 +131,10 @@ if (window.__kbnStrictCsp__ && window.__kbnCspNotEnforced__) {
     })
 
     load([
-      ${jsDependencyPaths.map((path) => `'${path}'`).join(',')}
+      ${jsDependencyPaths
+        .filter((p) => !excludableAndNotDependedOnPlugins.some((s) => p.endsWith(`${s}.plugin.js`)))
+        .map((path) => `'${path}'`)
+        .join(',')}
     ], function () {
       __kbnBundles__.get('entry/core/public').__kbnBootstrap__();
     });

@@ -395,6 +395,7 @@ export class Server {
       coreUsageData: coreUsageDataStart,
       deprecations: deprecationsStart,
     };
+    this.rendering.caps = capabilitiesStart;
 
     await this.plugins.start(this.coreStart);
 

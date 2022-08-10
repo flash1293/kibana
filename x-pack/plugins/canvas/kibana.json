@@ -30,6 +30,7 @@
     "share"
   ],
   "optionalPlugins": ["home", "reporting", "spaces", "usageCollection"],
+  "doNotLoadIfThisCapabilityIsFalsy": ["canvas.show"],
   "requiredBundles": [
     "discover",
     "kibanaReact",

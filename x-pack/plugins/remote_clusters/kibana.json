@@ -8,6 +8,7 @@
   },
   "requiredPlugins": ["licensing", "management", "indexManagement", "features", "share"],
   "optionalPlugins": ["usageCollection", "cloud"],
+  "doNotLoadIfThisCapabilityIsFalsy": ["management.data.remote_clusters"],
   "server": true,
   "ui": true,
   "requiredBundles": ["kibanaReact", "esUiShared"]

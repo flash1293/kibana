@@ -36,6 +36,7 @@
   ],
   "ui": true,
   "server": true,
+  "doNotLoadIfThisCapabilityIsFalsy": ["apm.show", "uptime.show", "infrastructure.show", "observabilityCases.read_cases"],
   "requiredBundles": [
     "unifiedSearch",
     "data",

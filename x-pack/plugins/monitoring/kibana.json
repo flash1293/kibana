@@ -20,6 +20,7 @@
   ],
   "server": true,
   "ui": true,
+  "doNotLoadIfThisCapabilityIsFalsy": ["infrastructure.show"],
   "requiredBundles": [
     "kibanaUtils",
     "alerting",

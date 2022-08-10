@@ -33,6 +33,7 @@
   "extraPublicDirs": [
     "common"
   ],
+  "doNotLoadIfThisCapabilityIsFalsy": ["management.data.transform"],
   "owner": {
     "name": "Machine Learning UI",
     "githubTeam": "ml-ui"

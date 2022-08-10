@@ -18,6 +18,7 @@
      "githubTeam":"response-ops",
      "name":"ResponseOps"
   },
+  "doNotLoadIfThisCapabilityIsFalsy": ["securitySolutionCases.read_cases", "observabilityCases.read_cases", "generalCases.read_cases"],
   "requiredPlugins":[
      "actions",
      "data",

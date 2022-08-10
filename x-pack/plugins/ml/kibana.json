@@ -36,6 +36,7 @@
     "spaces",
     "usageCollection"
   ],
+  "doNotLoadIfThisCapabilityIsFalsy": ["ml.canAccessML"],
   "server": true,
   "ui": true,
   "requiredBundles": [

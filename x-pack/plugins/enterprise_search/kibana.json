@@ -12,5 +12,6 @@
     "name": "Enterprise Search",
     "githubTeam": "enterprise-search-frontend"
   },
+  "doNotLoadIfThisCapabilityIsFalsy": ["infrastructure.show"],
   "description": "Adds dashboards for discovering and managing Enterprise Search products."
 }

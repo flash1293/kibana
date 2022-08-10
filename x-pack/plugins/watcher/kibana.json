@@ -17,5 +17,6 @@
   ],
   "server": true,
   "ui": true,
+  "doNotLoadIfThisCapabilityIsFalsy": ["management.insightsAndAlerting.watcher"],
   "requiredBundles": ["esUiShared", "kibanaReact", "fieldFormats"]
 }

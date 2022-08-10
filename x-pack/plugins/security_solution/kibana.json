@@ -32,6 +32,7 @@
     "uiActions",
     "unifiedSearch"
   ],
+  "doNotLoadIfThisCapabilityIsFalsy": ["siem.show"],
   "optionalPlugins": [
     "encryptedSavedObjects",
     "fleet",

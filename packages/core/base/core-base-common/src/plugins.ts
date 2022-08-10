@@ -65,6 +65,8 @@ export interface DiscoveredPlugin {
    */
   readonly optionalPlugins: readonly PluginName[];
 
+  readonly doNotLoadIfThisCapabilityIsFalsy?: string[];
+
   /**
    * List of plugin ids that this plugin's UI code imports modules from that are
    * not in `requiredPlugins`.

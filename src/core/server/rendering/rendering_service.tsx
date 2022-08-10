@@ -15,6 +15,7 @@ import type { ThemeVersion } from '@kbn/ui-shared-deps-npm';
 import { firstValueFrom, of } from 'rxjs';
 import type { CoreContext } from '@kbn/core-base-server-internal';
 import type { KibanaRequest, HttpAuth } from '@kbn/core-http-server';
+import { CapabilitiesStart } from '@kbn/core-capabilities-server';
 import type { UiPlugins } from '../plugins';
 import { Template } from './views';
 import {
@@ -39,6 +40,8 @@ type RenderOptions =
 export class RenderingService {
   constructor(private readonly coreContext: CoreContext) {}
 
+  public caps: CapabilitiesStart | undefined;
+
   public async preboot({
     http,
     uiPlugins,
@@ -51,6 +54,7 @@ export class RenderingService {
           serverBasePath: http.basePath.serverBasePath,
           packageInfo: this.coreContext.env.packageInfo,
           auth: http.auth,
+          getCaps: () => this.caps,
         }),
       });
     });
@@ -73,6 +77,7 @@ export class RenderingService {
         serverBasePath: http.basePath.serverBasePath,
         packageInfo: this.coreContext.env.packageInfo,
         auth: http.auth,
+        getCaps: () => this.caps,
       }),
     });
 

@@ -10,6 +10,7 @@
   "extraPublicDirs": ["common"],
   "server": true,
   "ui": true,
+  "doNotLoadIfThisCapabilityIsFalsy": ["siem.show"],
   "requiredPlugins": ["alerting", "cases", "data", "kibanaReact", "kibanaUtils", "triggersActionsUi"],
   "optionalPlugins": ["security"]
 }

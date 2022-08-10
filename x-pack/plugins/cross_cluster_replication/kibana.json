@@ -17,6 +17,7 @@
     "features"
   ],
   "optionalPlugins": ["usageCollection"],
+  "doNotLoadIfThisCapabilityIsFalsy": ["management.data.cross_cluster_replication"],
   "configPath": ["xpack", "ccr"],
   "requiredBundles": ["kibanaReact", "esUiShared", "data"]
 }

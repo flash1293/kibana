@@ -10,5 +10,6 @@
   "configPath": ["xpack", "painless_lab"],
   "server": true,
   "ui": true,
+  "doNotLoadIfThisCapabilityIsFalsy": ["dev_tools.show"],
   "requiredBundles": ["kibanaReact"]
 }

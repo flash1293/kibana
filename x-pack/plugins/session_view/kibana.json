@@ -15,6 +15,7 @@
     "kibanaReact",
     "esUiShared"
   ],
+  "doNotLoadIfThisCapabilityIsFalsy": ["siem.show"],
   "server": true,
   "ui": true
 }

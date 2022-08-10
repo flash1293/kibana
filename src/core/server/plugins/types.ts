@@ -205,6 +205,8 @@ export interface PluginManifest {
    */
   readonly optionalPlugins: readonly PluginName[];
 
+  readonly doNotLoadIfThisCapabilityIsFalsy?: string[];
+
   /**
    * Specifies whether plugin includes some client/browser specific functionality
    * that should be included into client bundle via `public/ui_plugin.js` file.
