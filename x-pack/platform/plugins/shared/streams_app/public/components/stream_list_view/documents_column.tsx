@@ -6,13 +6,7 @@
  */
 
 import React from 'react';
-import {
-  EuiFlexGroup,
-  EuiFlexItem,
-  EuiI18nNumber,
-  EuiSkeletonRectangle,
-  EuiDelayRender,
-} from '@elastic/eui';
+import { EuiFlexGroup, EuiFlexItem, EuiI18nNumber, EuiSkeletonRectangle } from '@elastic/eui';
 import { euiThemeVars } from '@kbn/ui-theme';
 import { css } from '@emotion/css';
 import {
@@ -78,6 +72,20 @@ export function DocumentsColumn({
     [histogramQueryFetch]
   );
 
+  const [showSkeleton, setShowSkeleton] = React.useState(false);
+
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (histogramQueryFetch.loading) {
+      timer = setTimeout(() => setShowSkeleton(true), 300);
+    } else {
+      setShowSkeleton(false);
+    }
+
+    return () => clearTimeout(timer);
+  }, [histogramQueryFetch.loading]);
+
   const docCount = allTimeseries.reduce(
     (acc, series) => acc + series.data.reduce((acc2, item) => acc2 + (item.doc_count || 0), 0),
     0
@@ -94,15 +102,15 @@ export function DocumentsColumn({
         white-space: nowrap;
       `}
     >
-      {histogramQueryFetch.loading ? (
-        <EuiDelayRender delay={300}>
+      {histogramQueryFetch.loading && showSkeleton ? (
+        <>
           <EuiFlexItem>
             <EuiSkeletonRectangle isLoading width="100%" height={euiThemeVars.euiFontSizeS} />
           </EuiFlexItem>
           <EuiFlexItem>
             <EuiSkeletonRectangle isLoading width="100%" height={euiThemeVars.euiSizeL} />
           </EuiFlexItem>
-        </EuiDelayRender>
+        </>
       ) : (
         <>
           <EuiFlexItem
