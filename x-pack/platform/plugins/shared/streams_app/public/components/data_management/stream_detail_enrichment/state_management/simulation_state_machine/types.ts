@@ -8,8 +8,8 @@
 import { Condition, FlattenRecord, SampleDocument } from '@kbn/streams-schema';
 import { APIReturnType, StreamsRepositoryClient } from '@kbn/streams-plugin/public/api';
 import { IToasts } from '@kbn/core/public';
-import { Observable } from 'rxjs';
-import { TimeStateUpdate } from '@kbn/data-plugin/public/query/timefilter/use_timefilter';
+import { BehaviorSubject } from 'rxjs';
+import { TimeState } from '@kbn/es-query';
 import { ProcessorDefinitionWithUIAttributes } from '../../types';
 import { PreviewDocsFilterOption } from './preview_docs_filter';
 import { MappedSchemaField, SchemaField } from '../../../schema_editor/types';
@@ -18,7 +18,7 @@ export type Simulation = APIReturnType<'POST /internal/streams/{name}/processing
 export type DetectedField = Simulation['detected_fields'][number];
 
 export interface SimulationMachineDeps {
-  timeState$: Observable<TimeStateUpdate>;
+  timeState$: BehaviorSubject<TimeState>;
   streamsRepositoryClient: StreamsRepositoryClient;
   toasts: IToasts;
 }

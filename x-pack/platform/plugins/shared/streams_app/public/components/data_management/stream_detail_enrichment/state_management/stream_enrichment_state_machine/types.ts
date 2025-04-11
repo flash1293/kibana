@@ -8,8 +8,8 @@
 import { CoreStart } from '@kbn/core/public';
 import { StreamsRepositoryClient } from '@kbn/streams-plugin/public/api';
 import { IngestStreamGetResponse } from '@kbn/streams-schema';
-import { Observable } from 'rxjs';
-import { TimeStateUpdate } from '@kbn/data-plugin/public/query/timefilter/use_timefilter';
+import { TimeState } from '@kbn/es-query';
+import { BehaviorSubject } from 'rxjs';
 import { ProcessorDefinitionWithUIAttributes } from '../../types';
 import { ProcessorActorRef, ProcessorToParentEvent } from '../processor_state_machine';
 import { PreviewDocsFilterOption, SimulationActorRef } from '../simulation_state_machine';
@@ -19,7 +19,7 @@ export interface StreamEnrichmentServiceDependencies {
   refreshDefinition: () => void;
   streamsRepositoryClient: StreamsRepositoryClient;
   core: CoreStart;
-  timeState$: Observable<TimeStateUpdate>;
+  timeState$: BehaviorSubject<TimeState>;
 }
 
 export interface StreamEnrichmentInput {

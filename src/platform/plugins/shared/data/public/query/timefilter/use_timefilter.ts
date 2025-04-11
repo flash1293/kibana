@@ -8,7 +8,7 @@
  */
 
 import { TimeRange, TimeState } from '@kbn/es-query';
-import { BehaviorSubject, Observable, Subject, combineLatest, map, share, shareReplay, skip } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, combineLatest, map, share, skip } from 'rxjs';
 import { cloneDeep } from 'lodash';
 import useObservable from 'react-use/lib/useObservable';
 import type { Timefilter } from './timefilter';
@@ -114,7 +114,7 @@ export function createUseTimefilterHook(
     },
   });
 
-  const timeStateConsumer$ = timeState$.pipe(shareReplay(1));
+  const timeStateConsumer$ = timeState$.pipe(share());
 
   // make sure refresh$ has emitted at least a single value,
   // otherwise combineLatest won't call

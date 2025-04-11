@@ -21,8 +21,8 @@ import {
 } from '@kbn/streams-schema';
 import { isEmpty, isEqual } from 'lodash';
 import { flattenObjectNestedLast } from '@kbn/object-utils';
-import { Observable, map } from 'rxjs';
-import { TimeStateUpdate } from '@kbn/data-plugin/public/query/timefilter/use_timefilter';
+import { BehaviorSubject, map } from 'rxjs';
+import { TimeState } from '@kbn/es-query';
 import { ProcessorDefinitionWithUIAttributes } from '../../types';
 import { processorConverter } from '../../utils';
 import {
@@ -306,6 +306,6 @@ export const createSimulationMachineImplementations = ({
   },
 });
 
-function createTimeUpdatesActor({ timeState$ }: { timeState$: Observable<TimeStateUpdate> }) {
+function createTimeUpdatesActor({ timeState$ }: { timeState$: BehaviorSubject<TimeState> }) {
   return fromEventObservable(() => timeState$.pipe(map(() => ({ type: 'dateRange.update' }))));
 }
