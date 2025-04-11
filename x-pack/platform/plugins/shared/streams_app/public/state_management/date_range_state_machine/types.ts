@@ -27,6 +27,7 @@ export interface DateRangeInput {
   parentRef?: DateRangeParentActor;
 }
 
-export type DateRangeEvent =
-  | { type: 'dateRange.refresh' }
-  | { type: 'dateRange.update'; range: TimeRange };
+export interface DateRangeEvent {
+  type: 'dateRange.update';
+  range: TimeRange;
+}

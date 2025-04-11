@@ -14,9 +14,9 @@ import {
   assign,
   ActorRefFrom,
 } from 'xstate5';
-import type { DataPublicPluginStart, TimefilterContract } from '@kbn/data-plugin/public';
 import { getPlaceholderFor } from '@kbn/xstate-utils';
 import { DateRangeContext, DateRangeEvent, DateRangeInput } from './types';
+import { useTimefilter } from '../../hooks/use_timefilter';
 
 export type DateRangeActorRef = ActorRefFrom<typeof dateRangeMachine>;
 
@@ -68,39 +68,40 @@ export const dateRangeMachine = setup({
     'dateRange.update': {
       actions: [{ type: 'setTimeUpdates' }],
     },
-    'dateRange.refresh': {
-      actions: [{ type: 'storeTimeUpdates' }, { type: 'notifyDateRangeUpdate' }],
-    },
   },
 });
 
 export const createDateRangeMachineImplementations = ({
-  data,
+  timefilterHook,
 }: {
-  data: DataPublicPluginStart;
+  timefilterHook: ReturnType<typeof useTimefilter>;
 }): MachineImplementationsFrom<typeof dateRangeMachine> => ({
   actors: {
-    subscribeTimeUpdates: createTimeUpdatesActor({ data }),
+    subscribeTimeUpdates: createTimeUpdatesActor({ timefilterHook }),
   },
   actions: {
     setTimeUpdates: ({ event }: { event: DateRangeEvent }) => {
       assertEvent(event, 'dateRange.update');
-      data.query.timefilter.timefilter.setTime(event.range);
+      timefilterHook.setTime(event.range);
     },
-    storeTimeUpdates: assign(() => getTimeContextFromService(data.query.timefilter.timefilter)),
+    storeTimeUpdates: assign(() => getTimeContextFromHook(timefilterHook)),
   },
 });
 
-function createTimeUpdatesActor({ data }: { data: DataPublicPluginStart }) {
-  return fromObservable(() => data.query.timefilter.timefilter.getTimeUpdate$());
+function createTimeUpdatesActor({
+  timefilterHook,
+}: {
+  timefilterHook: ReturnType<typeof useTimefilter>;
+}) {
+  return fromObservable(() => timefilterHook.timeState$);
 }
 
-function getTimeContextFromService(timefilter: TimefilterContract) {
+function getTimeContextFromHook(timefilterHook: ReturnType<typeof useTimefilter>) {
   return {
-    timeRange: timefilter.getTime(),
+    timeRange: timefilterHook.timeState.timeRange,
     absoluteTimeRange: {
-      start: new Date(timefilter.getAbsoluteTime().from).getTime(),
-      end: new Date(timefilter.getAbsoluteTime().to).getTime(),
+      start: new Date(timefilterHook.timeState.asAbsoluteTimeRange.from).getTime(),
+      end: new Date(timefilterHook.timeState.asAbsoluteTimeRange.to).getTime(),
     },
   };
 }

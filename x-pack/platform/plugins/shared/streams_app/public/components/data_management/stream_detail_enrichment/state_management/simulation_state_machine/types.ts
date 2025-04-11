@@ -21,7 +21,7 @@ export type Simulation = APIReturnType<'POST /internal/streams/{name}/processing
 export type DetectedField = Simulation['detected_fields'][number];
 
 export interface SimulationMachineDeps {
-  data: DataPublicPluginStart;
+  timefilterHook: ReturnType<typeof useTimefilter>;
   streamsRepositoryClient: StreamsRepositoryClient;
   toasts: IToasts;
 }

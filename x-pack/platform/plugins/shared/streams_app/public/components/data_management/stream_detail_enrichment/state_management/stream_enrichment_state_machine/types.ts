@@ -9,6 +9,7 @@ import { CoreStart } from '@kbn/core/public';
 import { StreamsRepositoryClient } from '@kbn/streams-plugin/public/api';
 import { IngestStreamGetResponse } from '@kbn/streams-schema';
 import { DataPublicPluginStart } from '@kbn/data-plugin/public';
+import { useTimefilter } from '../../../../../hooks/use_timefilter';
 import { ProcessorDefinitionWithUIAttributes } from '../../types';
 import { ProcessorActorRef, ProcessorToParentEvent } from '../processor_state_machine';
 import { PreviewDocsFilterOption, SimulationActorRef } from '../simulation_state_machine';
@@ -19,6 +20,7 @@ export interface StreamEnrichmentServiceDependencies {
   streamsRepositoryClient: StreamsRepositoryClient;
   core: CoreStart;
   data: DataPublicPluginStart;
+  timefilterHook: ReturnType<typeof useTimefilter>;
 }
 
 export interface StreamEnrichmentInput {

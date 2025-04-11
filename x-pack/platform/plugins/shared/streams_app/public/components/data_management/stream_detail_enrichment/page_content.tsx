@@ -25,6 +25,7 @@ import { useUnsavedChangesPrompt } from '@kbn/unsaved-changes-prompt';
 import { css } from '@emotion/react';
 import { isEmpty } from 'lodash';
 import { FormattedMessage } from '@kbn/i18n-react';
+import { useTimefilter } from '../../../hooks/use_timefilter';
 import { useKibana } from '../../../hooks/use_kibana';
 import { DraggableProcessorListItem } from './processors_list';
 import { SortableList } from './sortable_list';
@@ -52,6 +53,8 @@ export function StreamDetailEnrichmentContent(props: StreamDetailEnrichmentConte
     streams: { streamsRepositoryClient },
   } = dependencies.start;
 
+  const timefilterHook = useTimefilter();
+
   return (
     <StreamEnrichmentContextProvider
       definition={props.definition}
@@ -59,6 +62,7 @@ export function StreamDetailEnrichmentContent(props: StreamDetailEnrichmentConte
       core={core}
       data={data}
       streamsRepositoryClient={streamsRepositoryClient}
+      timefilterHook={timefilterHook}
     >
       <StreamDetailEnrichmentContentImpl />
     </StreamEnrichmentContextProvider>

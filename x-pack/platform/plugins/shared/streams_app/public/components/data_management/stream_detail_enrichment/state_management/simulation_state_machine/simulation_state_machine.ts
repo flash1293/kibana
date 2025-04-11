@@ -302,14 +302,16 @@ export const simulationMachine = setup({
 });
 
 export const createSimulationMachineImplementations = ({
-  data,
   streamsRepositoryClient,
   toasts,
+  timefilterHook,
 }: SimulationMachineDeps): MachineImplementationsFrom<typeof simulationMachine> => ({
   actors: {
     fetchSamples: createSamplesFetchActor({ streamsRepositoryClient }),
     runSimulation: createSimulationRunnerActor({ streamsRepositoryClient }),
-    dateRangeMachine: dateRangeMachine.provide(createDateRangeMachineImplementations({ data })),
+    dateRangeMachine: dateRangeMachine.provide(
+      createDateRangeMachineImplementations({ timefilterHook })
+    ),
   },
   actions: {
     notifySamplesFetchFailure: createSamplesFetchFailureNofitier({ toasts }),
