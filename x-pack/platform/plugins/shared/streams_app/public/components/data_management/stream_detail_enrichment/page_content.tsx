@@ -62,7 +62,7 @@ export function StreamDetailEnrichmentContent(props: StreamDetailEnrichmentConte
       core={core}
       data={data}
       streamsRepositoryClient={streamsRepositoryClient}
-      timefilterHook={timefilterHook}
+      timeState$={timefilterHook.timeState$}
     >
       <StreamDetailEnrichmentContentImpl />
     </StreamEnrichmentContextProvider>

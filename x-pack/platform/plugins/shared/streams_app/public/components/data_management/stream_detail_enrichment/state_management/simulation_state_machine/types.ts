@@ -8,11 +8,8 @@
 import { Condition, FlattenRecord, SampleDocument } from '@kbn/streams-schema';
 import { APIReturnType, StreamsRepositoryClient } from '@kbn/streams-plugin/public/api';
 import { IToasts } from '@kbn/core/public';
-import { DataPublicPluginStart } from '@kbn/data-plugin/public';
-import {
-  DateRangeToParentEvent,
-  DateRangeActorRef,
-} from '../../../../../state_management/date_range_state_machine';
+import { Observable } from 'rxjs';
+import { TimeStateUpdate } from '@kbn/data-plugin/public/query/timefilter/use_timefilter';
 import { ProcessorDefinitionWithUIAttributes } from '../../types';
 import { PreviewDocsFilterOption } from './preview_docs_filter';
 import { MappedSchemaField, SchemaField } from '../../../schema_editor/types';
@@ -21,7 +18,7 @@ export type Simulation = APIReturnType<'POST /internal/streams/{name}/processing
 export type DetectedField = Simulation['detected_fields'][number];
 
 export interface SimulationMachineDeps {
-  timefilterHook: ReturnType<typeof useTimefilter>;
+  timeState$: Observable<TimeStateUpdate>;
   streamsRepositoryClient: StreamsRepositoryClient;
   toasts: IToasts;
 }
@@ -35,7 +32,7 @@ export interface SimulationInput {
 }
 
 export type SimulationEvent =
-  | DateRangeToParentEvent
+  | { type: 'dateRange.update' }
   | { type: 'processors.add'; processors: ProcessorDefinitionWithUIAttributes[] }
   | { type: 'processor.cancel'; processors: ProcessorDefinitionWithUIAttributes[] }
   | { type: 'processor.change'; processors: ProcessorDefinitionWithUIAttributes[] }
@@ -46,7 +43,6 @@ export type SimulationEvent =
   | { type: 'simulation.reset' };
 
 export interface SimulationContext {
-  dateRangeRef: DateRangeActorRef;
   detectedSchemaFields: SchemaField[];
   previewDocsFilter: PreviewDocsFilterOption;
   previewDocuments: FlattenRecord[];
