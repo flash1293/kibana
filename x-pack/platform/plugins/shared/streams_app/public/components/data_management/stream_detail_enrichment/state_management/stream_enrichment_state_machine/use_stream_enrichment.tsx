@@ -8,7 +8,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { createActorContext, useSelector } from '@xstate5/react';
 import { createConsoleInspector } from '@kbn/xstate-utils';
-import { useTimefilter } from '../../../../../hooks/use_timefilter';
 import {
   streamEnrichmentMachine,
   createStreamEnrichmentMachineImplementations,
