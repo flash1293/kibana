@@ -199,9 +199,6 @@ export class StreamsClient {
           streamsClient: this,
         }
       );
-
-      const { assetClient, storageClient } = this.dependencies;
-      await Promise.all([assetClient.clean(), storageClient.clean()]);
     }
 
     if (elasticsearchStreamsEnabled) {
