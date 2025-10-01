@@ -5,14 +5,10 @@
  * 2.0.
  */
 
-import type { TimefilterContract, TimefilterHook, RefreshInterval } from '@kbn/data-plugin/public';
+import type { TimefilterContract, TimefilterHook } from '@kbn/data-plugin/public';
 import { useKibana } from './use_kibana';
 
-export function useTimefilter(): TimefilterHook & {
-  setTime: TimefilterContract['setTime'];
-  readonly refreshInterval: RefreshInterval;
-  setRefreshInterval: TimefilterContract['setRefreshInterval'];
-} {
+export function useTimefilter(): TimefilterHook & { setTime: TimefilterContract['setTime'] } {
   const {
     dependencies: {
       start: {
@@ -22,12 +18,9 @@ export function useTimefilter(): TimefilterHook & {
   } = useKibana();
 
   const result = query.timefilter.timefilter.useTimefilter();
-  const refreshInterval = query.timefilter.timefilter.getRefreshInterval();
 
   return {
     ...result,
     setTime: query.timefilter.timefilter.setTime,
-    refreshInterval,
-    setRefreshInterval: query.timefilter.timefilter.setRefreshInterval,
   };
 }

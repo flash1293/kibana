@@ -5,12 +5,11 @@
  * 2.0.
  */
 
-import { EuiFlexGroup, EuiTitle } from '@elastic/eui';
+import type { OnRefreshProps, OnTimeChangeProps } from '@elastic/eui';
+import { EuiFlexGroup, EuiSuperDatePicker, EuiTitle } from '@elastic/eui';
 import { css } from '@emotion/react';
 import React, { useCallback } from 'react';
-import type { TimeRange } from '@kbn/es-query';
 import { useDatasetQualityDetailsState } from '../../../hooks';
-import { useKibanaContextForPlugin } from '../../../utils/use_kibana';
 import { overviewHeaderTitle } from '../../../../common/translations';
 
 // Allow for lazy loading
@@ -18,16 +17,17 @@ import { overviewHeaderTitle } from '../../../../common/translations';
 export default function OverviewHeader({
   handleRefresh,
 }: {
-  handleRefresh: (dateRange: TimeRange) => void;
+  handleRefresh: (refreshProps: OnRefreshProps) => void;
 }) {
-  const { timeRange, updateTimeRange, onRefreshChange } = useDatasetQualityDetailsState();
-  const { unifiedSearch } = useKibanaContextForPlugin().services;
+  const { timeRange, updateTimeRange } = useDatasetQualityDetailsState();
 
   const onTimeChange = useCallback(
-    ({ ...timeRangeProps }: { start: string; end: string }) => {
-      updateTimeRange({ ...timeRangeProps });
+    ({ isInvalid, ...timeRangeProps }: OnTimeChangeProps) => {
+      if (!isInvalid) {
+        updateTimeRange({ refreshInterval: timeRange.refresh.value, ...timeRangeProps });
+      }
     },
-    [updateTimeRange]
+    [updateTimeRange, timeRange.refresh]
   );
 
   return (
@@ -50,27 +50,17 @@ export default function OverviewHeader({
           flex-grow: 0;
         `}
       >
-        <unifiedSearch.ui.SearchBar
-          appName="datasetQualityDetails"
-          showDatePicker={true}
-          showFilterBar={false}
-          showQueryMenu={false}
-          showQueryInput={false}
-          submitButtonStyle="iconOnly"
-          displayStyle="inPage"
-          disableQueryLanguageSwitcher
-          query={undefined}
-          dateRangeFrom={timeRange.from}
-          dateRangeTo={timeRange.to}
-          onQuerySubmit={(payload) =>
-            onTimeChange({ start: payload.dateRange.from, end: payload.dateRange.to })
-          }
-          onRefresh={(payload) => handleRefresh(payload.dateRange)}
-          onRefreshChange={({ refreshInterval, isPaused }) =>
-            onRefreshChange({ refreshInterval, isPaused })
-          }
-          refreshInterval={timeRange.refresh.value}
-          isRefreshPaused={timeRange.refresh.pause}
+        <EuiSuperDatePicker
+          width="auto"
+          compressed={true}
+          isLoading={false}
+          start={timeRange.from}
+          end={timeRange.to}
+          onTimeChange={onTimeChange}
+          onRefresh={handleRefresh}
+          isQuickSelectOnly={false}
+          showUpdateButton="iconOnly"
+          updateButtonProps={{ fill: false }}
         />
       </EuiFlexGroup>
     </EuiFlexGroup>

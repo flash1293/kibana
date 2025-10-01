@@ -66,7 +66,11 @@ export const useDatasetQualityFilters = () => {
   );
 
   const onTimeChange = useCallback(
-    (selectedTime: { start: string; end: string }) => {
+    (selectedTime: { start: string; end: string; isInvalid: boolean }) => {
+      if (selectedTime.isInvalid) {
+        return;
+      }
+
       service.send({
         type: 'UPDATE_TIME_RANGE',
         timeRange: {
@@ -86,7 +90,7 @@ export const useDatasetQualityFilters = () => {
   }, [service]);
 
   const onRefreshChange = useCallback(
-    ({ refreshInterval, isPaused }: Pick<OnRefreshChangeProps, 'refreshInterval' | 'isPaused'>) => {
+    ({ refreshInterval, isPaused }: OnRefreshChangeProps) => {
       service.send({
         type: 'UPDATE_TIME_RANGE',
         timeRange: {

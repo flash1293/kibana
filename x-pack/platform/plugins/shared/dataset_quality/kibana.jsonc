@@ -30,7 +30,6 @@
       "share",
       "taskManager",
       "triggersActionsUi",
-      "unifiedSearch",
     ],
     "optionalPlugins": [
       "alerting",

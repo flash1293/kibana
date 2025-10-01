@@ -7,7 +7,8 @@
 
 import { useCallback } from 'react';
 import { useSelector } from '@xstate/react';
-import type { OnRefreshChangeProps } from '@elastic/eui';
+import type { OnRefreshProps } from '@elastic/eui';
+import { DEFAULT_DATEPICKER_REFRESH } from '../../common/constants';
 import { useDatasetQualityDetailsContext } from '../components/dataset_quality_details/context';
 import { indexNameToDataStreamParts } from '../../common/utils';
 import type { BasicDataStream } from '../../common/types';
@@ -151,34 +152,18 @@ export const useDatasetQualityDetailsState = () => {
     state.matches('initializing.qualityIssueFlyout.open')
   );
 
-  const onRefreshChange = useCallback(
-    ({ refreshInterval, isPaused }: Pick<OnRefreshChangeProps, 'refreshInterval' | 'isPaused'>) => {
-      service.send({
-        type: 'UPDATE_TIME_RANGE',
-        timeRange: {
-          ...timeRange,
-          refresh: {
-            pause: isPaused,
-            value: refreshInterval,
-          },
-        },
-      });
-    },
-    [service, timeRange]
-  );
-
   const updateTimeRange = useCallback(
-    ({ start, end }: { start: string; end: string }) => {
+    ({ start, end, refreshInterval }: OnRefreshProps) => {
       service.send({
         type: 'UPDATE_TIME_RANGE',
         timeRange: {
-          ...timeRange,
           from: start,
           to: end,
+          refresh: { ...DEFAULT_DATEPICKER_REFRESH, value: refreshInterval },
         },
       });
     },
-    [service, timeRange]
+    [service]
   );
 
   const updateFailureStore = useCallback(
@@ -223,7 +208,6 @@ export const useDatasetQualityDetailsState = () => {
     timeRange,
     loadingState,
     updateTimeRange,
-    onRefreshChange,
     updateFailureStore,
     dataStreamSettings,
     integrationDetails,
