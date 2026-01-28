@@ -14,7 +14,9 @@ export const getFormattedError = (error: Error) => {
     'message' in error.body &&
     typeof error.body.message === 'string'
   ) {
-    return new Error(error.body.message);
+    const formattedError = new Error(error.body.message);
+    formattedError.stack = error.stack;
+    return formattedError;
   }
   return error;
 };
