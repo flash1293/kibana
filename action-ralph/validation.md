@@ -1,3 +1,5 @@
+Action Ralph smoke test
+
 # Validation guidance
 
 ## Core rules
