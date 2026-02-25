@@ -5,7 +5,13 @@
  * 2.0.
  */
 
-import { asTrees, buildStreamRows, enrichStream, filterCollapsedStreamRows } from './utils';
+import {
+  asTrees,
+  buildStreamRows,
+  enrichStream,
+  filterCollapsedStreamRows,
+  isElkyEasterEggQuery,
+} from './utils';
 import type { ListStreamDetail } from '@kbn/streams-plugin/server/routes/internal/streams/crud/route';
 import type { Direction } from '@elastic/eui';
 import { ms } from '@kbn/test/src/functional_test_runner/lib/mocha/reporter/ms';
@@ -267,5 +273,36 @@ describe('filterCollapsedStreamRows', () => {
     // Should include logs-a.child1, but not its grandchild
     expect(filtered.map((r) => r.stream.name)).toContain('logs.otel.child1');
     expect(filtered.map((r) => r.stream.name)).not.toContain('logs.otel.child1.grandchild');
+  });
+});
+
+describe('isElkyEasterEggQuery', () => {
+  it('returns true for exact match', () => {
+    expect(isElkyEasterEggQuery('Where is Elky?')).toBe(true);
+  });
+
+  it('returns true for case-insensitive match', () => {
+    expect(isElkyEasterEggQuery('where is elky?')).toBe(true);
+    expect(isElkyEasterEggQuery('WHERE IS ELKY?')).toBe(true);
+    expect(isElkyEasterEggQuery('WhErE iS eLkY?')).toBe(true);
+  });
+
+  it('returns true when surrounded by whitespace', () => {
+    expect(isElkyEasterEggQuery('  Where is Elky?  ')).toBe(true);
+    expect(isElkyEasterEggQuery('\t\nWhere is Elky?\n\t')).toBe(true);
+  });
+
+  it('returns false for non-matching queries', () => {
+    expect(isElkyEasterEggQuery('Where is Elky')).toBe(false);
+    expect(isElkyEasterEggQuery('Where is Elk?')).toBe(false);
+    expect(isElkyEasterEggQuery('Where is the elk?')).toBe(false);
+    expect(isElkyEasterEggQuery('logs')).toBe(false);
+    expect(isElkyEasterEggQuery('Elky')).toBe(false);
+  });
+
+  it('returns false for undefined or empty string', () => {
+    expect(isElkyEasterEggQuery(undefined)).toBe(false);
+    expect(isElkyEasterEggQuery('')).toBe(false);
+    expect(isElkyEasterEggQuery('   ')).toBe(false);
   });
 });

@@ -218,3 +218,9 @@ export const getLegacyLogsStatus = (
 
   return { hasLegacyLogs, hasNewStreams };
 };
+
+// Detects the Elky easter egg query (case-insensitive, trimmed)
+export const isElkyEasterEggQuery = (queryText: string | undefined): boolean => {
+  const trimmedQuery = queryText?.trim().toLowerCase() ?? '';
+  return trimmedQuery === 'where is elky?';
+};
