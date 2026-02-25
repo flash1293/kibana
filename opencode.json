@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "snapshot": false,
+  "provider": {
+    "litellm": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LiteLLM",
+      "options": {
+        "baseURL": "https://elastic.litellm-prod.ai",
+        "apiKey": "{env:LITELLM_API_KEY}"
+      },
+      "models": {
+        "azure_ai/claude-sonnet-4-5": {
+          "name": "azure_ai/claude-sonnet-4-5"
+        }
+      }
+    }
+  }
+}
