@@ -357,11 +357,41 @@ export function StreamsTreeTable({
             font-size: ${euiTheme.size.l};
             background-color: ${euiTheme.colors.lightestShade};
             border-radius: ${euiTheme.border.radius.medium};
+            @keyframes rotate {
+              from {
+                transform: rotate(0deg);
+              }
+              to {
+                transform: rotate(360deg);
+              }
+            }
+            .rotating-elk {
+              display: inline-block;
+              animation: rotate 2s linear infinite;
+            }
           `}
         >
-          <span role="img" aria-label="Elk emoji banner">
-            🦌 🦌 🦌 Elky is here! 🦌 🦌 🦌
-          </span>
+          <>
+            <span className="rotating-elk" role="img" aria-label="Elk emoji">
+              🦌
+            </span>{' '}
+            <span className="rotating-elk" role="img" aria-label="Elk emoji">
+              🦌
+            </span>{' '}
+            <span className="rotating-elk" role="img" aria-label="Elk emoji">
+              🦌
+            </span>{' '}
+            Elky is here!{' '}
+            <span className="rotating-elk" role="img" aria-label="Elk emoji">
+              🦌
+            </span>{' '}
+            <span className="rotating-elk" role="img" aria-label="Elk emoji">
+              🦌
+            </span>{' '}
+            <span className="rotating-elk" role="img" aria-label="Elk emoji">
+              🦌
+            </span>
+          </>
         </div>
       )}
       <EuiInMemoryTable<TableRow>

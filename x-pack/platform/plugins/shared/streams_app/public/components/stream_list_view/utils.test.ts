@@ -278,24 +278,24 @@ describe('filterCollapsedStreamRows', () => {
 
 describe('isElkyEasterEggQuery', () => {
   it('returns true for exact match', () => {
-    expect(isElkyEasterEggQuery('Where is Elky?')).toBe(true);
+    expect(isElkyEasterEggQuery('Where is Elky')).toBe(true);
   });
 
   it('returns true for case-insensitive match', () => {
-    expect(isElkyEasterEggQuery('where is elky?')).toBe(true);
-    expect(isElkyEasterEggQuery('WHERE IS ELKY?')).toBe(true);
-    expect(isElkyEasterEggQuery('WhErE iS eLkY?')).toBe(true);
+    expect(isElkyEasterEggQuery('where is elky')).toBe(true);
+    expect(isElkyEasterEggQuery('WHERE IS ELKY')).toBe(true);
+    expect(isElkyEasterEggQuery('WhErE iS eLkY')).toBe(true);
   });
 
   it('returns true when surrounded by whitespace', () => {
-    expect(isElkyEasterEggQuery('  Where is Elky?  ')).toBe(true);
-    expect(isElkyEasterEggQuery('\t\nWhere is Elky?\n\t')).toBe(true);
+    expect(isElkyEasterEggQuery('  Where is Elky  ')).toBe(true);
+    expect(isElkyEasterEggQuery('\t\nWhere is Elky\n\t')).toBe(true);
   });
 
   it('returns false for non-matching queries', () => {
-    expect(isElkyEasterEggQuery('Where is Elky')).toBe(false);
-    expect(isElkyEasterEggQuery('Where is Elk?')).toBe(false);
-    expect(isElkyEasterEggQuery('Where is the elk?')).toBe(false);
+    expect(isElkyEasterEggQuery('Where is Elky?')).toBe(false);
+    expect(isElkyEasterEggQuery('Where is Elk')).toBe(false);
+    expect(isElkyEasterEggQuery('Where is the elk')).toBe(false);
     expect(isElkyEasterEggQuery('logs')).toBe(false);
     expect(isElkyEasterEggQuery('Elky')).toBe(false);
   });
