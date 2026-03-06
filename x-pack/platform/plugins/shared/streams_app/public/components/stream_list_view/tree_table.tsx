@@ -20,7 +20,8 @@ import {
   EuiTourStep,
   EuiPanel,
 } from '@elastic/eui';
-import { css } from '@emotion/css';
+import { css as cssClassName } from '@emotion/css';
+import { css, keyframes } from '@emotion/react';
 import type { ListStreamDetail } from '@kbn/streams-plugin/server/routes/internal/streams/crud/route';
 import type { QualityIndicators } from '@kbn/dataset-quality-plugin/common';
 import { Streams, LOGS_ROOT_STREAM_NAME } from '@kbn/streams-schema';
@@ -59,7 +60,7 @@ import {
 } from './translations';
 import { DeprecatedLogsBadge, DiscoverBadgeButton, QueryStreamBadge } from '../stream_badges';
 
-const datePickerStyle = css`
+const datePickerStyle = cssClassName`
   .euiFormControlLayout,
   .euiSuperDatePicker button,
   .euiButton {
@@ -72,23 +73,48 @@ const isElkyEasterEgg = (searchText?: string): boolean => {
   return searchText.trim().toLowerCase() === 'where is elky';
 };
 
+const rotateAnimation = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
 const ElkEasterEggBanner = () => {
+  const elks = Array.from({ length: 10 }, (_, i) => i);
+
   return (
     <EuiPanel
       color="primary"
       paddingSize="m"
       hasBorder
       data-test-subj="elkEasterEggBanner"
-      className={css`
+      css={css`
         margin-bottom: 16px;
         text-align: center;
         font-size: 48px;
         line-height: 1.2;
       `}
     >
-      <span role="img" aria-label="Elk emoji banner">
-        🦌 🦌 🦌 🦌 🦌 🦌 🦌 🦌 🦌 🦌
-      </span>
+      <div role="img" aria-label="Elk emoji banner">
+        {elks.map((i) => (
+          <span
+            key={i}
+            role="img"
+            aria-label="Elk emoji"
+            css={css`
+              display: inline-block;
+              animation: ${rotateAnimation} 2s infinite linear;
+              animation-delay: ${i * 0.1}s;
+              margin: 0 4px;
+            `}
+          >
+            🦌
+          </span>
+        ))}
+      </div>
     </EuiPanel>
   );
 };
@@ -390,7 +416,7 @@ export function StreamsTreeTable({
                   alignItems="center"
                   gutterSize="s"
                   responsive={false}
-                  className={css`
+                  className={cssClassName`
                     margin-left: ${item.level * parseInt(euiTheme.size.xl, 10)}px;
                   `}
                 >
