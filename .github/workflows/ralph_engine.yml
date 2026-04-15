@@ -96,6 +96,8 @@ jobs:
           FORK_REPO="${{ github.repository }}"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${FORK_REPO}.git"
           git remote add upstream https://github.com/elastic/kibana.git || true
+          git config user.name "Joe Reuter"
+          git config user.email "johannes.reuter@elastic.co"
           echo "origin  → ${FORK_REPO} (push with PAT)"
           echo "upstream → elastic/kibana (read-only)"
 
@@ -244,38 +246,42 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.MY_PAT }}
         run: |
-          CHANGED=0
-          if ! git diff --quiet 2>/dev/null; then CHANGED=1; fi
-          if ! git diff --cached --quiet 2>/dev/null; then CHANGED=1; fi
-          if [ -n "$(git ls-files --others --exclude-standard)" ]; then CHANGED=1; fi
+          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md format_pr_context.py
 
-          if [ "$CHANGED" -eq 0 ]; then
-            echo "No changes to push"
+          UNSTAGED=0
+          if ! git diff --quiet 2>/dev/null; then UNSTAGED=1; fi
+          if ! git diff --cached --quiet 2>/dev/null; then UNSTAGED=1; fi
+          if [ -n "$(git ls-files --others --exclude-standard)" ]; then UNSTAGED=1; fi
+
+          if [ "$UNSTAGED" -eq 1 ]; then
+            git add -A
+            INSTRUCTION="${{ inputs.instruction }}"
+            COMMIT_MSG="Ralph: ${INSTRUCTION}"
+            if [ ${#COMMIT_MSG} -gt 72 ]; then
+              COMMIT_MSG="${COMMIT_MSG:0:69}..."
+            fi
+            git commit -m "$COMMIT_MSG"
+          fi
+
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          UNPUSHED=$(git log origin/"$CURRENT_BRANCH"..HEAD --oneline 2>/dev/null || echo "unknown")
+
+          if [ "$UNPUSHED" = "" ] || [ "$UNPUSHED" = "unknown" ]; then
+            echo "No unpushed commits"
             exit 0
           fi
 
-          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md format_pr_context.py
+          echo "Unpushed commits:"
+          echo "$UNPUSHED"
+          git push origin "$CURRENT_BRANCH"
 
-          git config user.name "Joe Reuter"
-          git config user.email "johannes.reuter@elastic.co"
-          git add -A
           INSTRUCTION="${{ inputs.instruction }}"
-          COMMIT_MSG="Ralph: ${INSTRUCTION}"
-          if [ ${#COMMIT_MSG} -gt 72 ]; then
-            COMMIT_MSG="${COMMIT_MSG:0:69}..."
-          fi
-          git commit -m "$COMMIT_MSG"
 
           if [ "${{ inputs.command }}" == "new" ]; then
-            BRANCH_SLUG=$(echo "$INSTRUCTION" | head -c 40 | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/-\+/-/g' | sed 's/^-//;s/-$//')
-            BRANCH_NAME="ralph/${BRANCH_SLUG}-$(date +%Y%m%d-%H%M%S)"
-            git checkout -b "$BRANCH_NAME"
-            git push origin "$BRANCH_NAME"
-
             FORK_OWNER="${{ github.repository_owner }}"
             gh pr create \
               --repo elastic/kibana \
-              --head "${FORK_OWNER}:${BRANCH_NAME}" \
+              --head "${FORK_OWNER}:${CURRENT_BRANCH}" \
               --base main \
               --title "Ralph: ${INSTRUCTION}" \
               --body "Drafted by Ralph Engine.
@@ -286,7 +292,6 @@ jobs:
           *This PR was created automatically by the Ralph Engine GitHub Action.*" \
               --draft
           else
-            git push origin HEAD
             gh pr comment ${{ inputs.pr_id }} --body "Ralph applied changes for: ${INSTRUCTION}
 
           ---
