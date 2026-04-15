@@ -37,6 +37,10 @@ import { LegacyLogsDeprecationCallout } from './legacy_logs_deprecation_callout'
 import { CreateQueryStreamFlyout } from '../query_streams/create_query_stream_flyout';
 import { getFormattedError } from '../../util/errors';
 
+// Fun easter egg: random emoji for the header
+const HEADER_EMOJIS = ['🌊', '🚀', '⚡', '🎯', '🎨', '🔮', '🌟', '🎭', '🎪', '🎨', '🎸', '🎲'];
+const getRandomEmoji = () => HEADER_EMOJIS[Math.floor(Math.random() * HEADER_EMOJIS.length)];
+
 export function StreamListView() {
   const { euiTheme } = useEuiTheme();
   const context = useKibana();
@@ -50,6 +54,7 @@ export function StreamListView() {
   } = context;
   const { onPageReady } = usePerformanceContext();
   const router = useStreamsAppRouter();
+  const [headerEmoji] = useState(() => getRandomEmoji());
 
   const { timeState } = useTimefilter();
   const streamsListFetch = useStreamsAppFetch(
@@ -163,9 +168,9 @@ export function StreamListView() {
           >
             <EuiFlexItem>
               <EuiFlexGroup alignItems="center" gutterSize="m">
-                {i18n.translate('xpack.streams.streamsListView.pageHeaderTitle', {
+                {`${headerEmoji} ${i18n.translate('xpack.streams.streamsListView.pageHeaderTitle', {
                   defaultMessage: 'Streams',
-                })}
+                })}`}
               </EuiFlexGroup>
             </EuiFlexItem>
             {significantEventsDiscovery?.available && significantEventsDiscovery.enabled && (
