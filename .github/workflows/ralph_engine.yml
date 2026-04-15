@@ -54,6 +54,7 @@ jobs:
       - name: Ralph Context Assembly
         env:
           GH_TOKEN: ${{ secrets.MY_PAT }}
+          PR_ID: ${{ inputs.pr_id }}
         run: |
           if [ "${{ inputs.command }}" == "adjust" ]; then
             if [ -z "${{ inputs.pr_id }}" ]; then
@@ -62,8 +63,76 @@ jobs:
             fi
             git fetch origin pull/${{ inputs.pr_id }}/head:pr-${{ inputs.pr_id }}
             git checkout pr-${{ inputs.pr_id }}
-            gh pr view ${{ inputs.pr_id }} --json comments,title,body,headRefName,headRepository > .ralph_context.json
-            echo "Checked out PR #${{ inputs.pr_id }}"
+
+            gh pr view ${{ inputs.pr_id }} --repo elastic/kibana --json title,body,state,labels,headRefName,baseRefName > .ralph_pr_meta.json
+            gh api "repos/elastic/kibana/issues/${{ inputs.pr_id }}/comments?per_page=50" > .ralph_issue_comments.json 2>/dev/null || echo "[]" > .ralph_issue_comments.json
+            gh api "repos/elastic/kibana/pulls/${{ inputs.pr_id }}/comments?per_page=50" > .ralph_review_comments.json 2>/dev/null || echo "[]" > .ralph_review_comments.json
+
+            git diff --name-only origin/main...HEAD > .ralph_diff_summary.txt 2>/dev/null || true
+
+            python3 - <<'PY'
+            import json
+
+            pr_id = "${{ inputs.pr_id }}"
+
+            with open('.ralph_pr_meta.json') as f:
+                meta = json.load(f)
+
+            lines = []
+            lines.append(f"# PR #{pr_id}: {meta.get('title', '')}")
+            lines.append(f"State: {meta.get('state', '')}")
+            lines.append(f"Base: {meta.get('baseRefName', '')} ← Head: {meta.get('headRefName', '')}")
+            labels = [l['name'] for l in meta.get('labels', [])]
+            if labels:
+                lines.append(f"Labels: {', '.join(labels)}")
+            lines.append("")
+            lines.append("## Description")
+            lines.append(meta.get('body') or '(none)')
+            lines.append("")
+
+            with open('.ralph_diff_summary.txt') as f:
+                diff_files = [l.strip() for l in f if l.strip()]
+            if diff_files:
+                lines.append("## Files Changed in PR")
+                for f in diff_files:
+                    lines.append(f"- {f}")
+                lines.append("")
+
+            with open('.ralph_issue_comments.json') as f:
+                issue_comments = json.load(f)
+            lines.append("## Issue Comments")
+            if not issue_comments:
+                lines.append("(none)")
+            for c in issue_comments:
+                author = c.get('user', {}).get('login', 'unknown')
+                date = c.get('created_at', '')[:10]
+                body = c.get('body', '')
+                lines.append(f"- @{author} ({date}):")
+                for bl in body.splitlines():
+                    lines.append(f"  {bl}")
+            lines.append("")
+
+            with open('.ralph_review_comments.json') as f:
+                review_comments = json.load(f)
+            lines.append("## Inline Review Comments")
+            if not review_comments:
+                lines.append("(none)")
+            for c in review_comments:
+                author = c.get('user', {}).get('login', 'unknown')
+                path = c.get('path', 'unknown')
+                line = c.get('line', c.get('original_line', '?'))
+                body = c.get('body', '')
+                lines.append(f"- @{author} [{path}:{line}]:")
+                for bl in body.splitlines():
+                    lines.append(f"  {bl}")
+            lines.append("")
+
+            with open('.ralph_context.md', 'w') as f:
+                f.write('\n'.join(lines))
+            PY
+
+            rm -f .ralph_pr_meta.json .ralph_issue_comments.json .ralph_review_comments.json .ralph_diff_summary.txt
+            echo "Checked out PR #${{ inputs.pr_id }} — context written to .ralph_context.md"
           else
             echo "New task mode — checked out elastic/kibana:main"
           fi
@@ -143,8 +212,8 @@ jobs:
           fi
 
           CONTEXT=""
-          if [ "${{ inputs.command }}" == "adjust" ] && [ -f .ralph_context.json ]; then
-            CONTEXT=$(cat .ralph_context.json)
+          if [ "${{ inputs.command }}" == "adjust" ] && [ -f .ralph_context.md ]; then
+            CONTEXT=$(cat .ralph_context.md)
           fi
 
           cat > .ralph_task.md <<'TASK_HEADER'
@@ -185,6 +254,7 @@ jobs:
           - You are running in CI. Do NOT attempt interactive git operations.
           - All commits will be pushed by the workflow after you finish.
           - Focus on implementing the instruction above. Update files directly.
+          - For adjust tasks, full PR context is in .ralph_context.md (description, comments, review comments, changed files).
           - To type-check your changes, use the fast observability type checker:
             node x-pack/solutions/observability/packages/kbn-ts-type-check-oblt-cli/type_check.js --project path/to/tsconfig.json
           - If the fast type checker is unavailable, fall back to: yarn test:type_check --project path/to/tsconfig.json
@@ -232,7 +302,7 @@ jobs:
             exit 0
           fi
 
-          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.json ralph-output.md
+          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md
 
           git config user.name "Joe Reuter"
           git config user.email "johannes.reuter@elastic.co"
@@ -274,4 +344,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          rm -f .ralph_task.md .ralph_fix_task.md .ralph_context.json ralph-output.md
+          rm -f .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md
