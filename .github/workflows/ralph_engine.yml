@@ -234,8 +234,8 @@ jobs:
 
           rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.json ralph-output.md
 
-          git config user.name "Ralph-Agent"
-          git config user.email "ralph@bot.local"
+          git config user.name "Joe Reuter"
+          git config user.email "johannes.reuter@elastic.co"
           git add -A
           INSTRUCTION="${{ inputs.instruction }}"
           COMMIT_MSG="Ralph: ${INSTRUCTION}"
