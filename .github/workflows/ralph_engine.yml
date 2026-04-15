@@ -52,14 +52,14 @@ jobs:
         with:
           repository: elastic/kibana
           ref: main
-          fetch-depth: 1
+          fetch-depth: 10
 
       - name: Checkout fork (adjust task)
         if: inputs.command == 'adjust'
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.resolve_pr_ref.outputs.ref }}
-          fetch-depth: 1
+          fetch-depth: 10
           token: ${{ secrets.MY_PAT }}
 
       - name: Ralph Context Assembly
