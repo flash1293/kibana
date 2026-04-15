@@ -61,30 +61,33 @@ jobs:
               echo "ERROR: pr_id is required for adjust command"
               exit 1
             fi
-            git fetch origin pull/${{ inputs.pr_id }}/head:pr-${{ inputs.pr_id }}
-            git checkout pr-${{ inputs.pr_id }}
 
-            gh pr view ${{ inputs.pr_id }} --repo elastic/kibana --json title,body,state,labels,headRefName,baseRefName > .ralph_pr_meta.json
-            gh api "repos/elastic/kibana/issues/${{ inputs.pr_id }}/comments?per_page=50" > .ralph_issue_comments.json 2>/dev/null || echo "[]" > .ralph_issue_comments.json
-            gh api "repos/elastic/kibana/pulls/${{ inputs.pr_id }}/comments?per_page=50" > .ralph_review_comments.json 2>/dev/null || echo "[]" > .ralph_review_comments.json
+            BRANCH_NAME=$(gh pr view "$PR_ID" --repo elastic/kibana --json headRefName -q .headRefName)
+            echo "PR #$PR_ID is on branch: $BRANCH_NAME"
+            git fetch origin "$BRANCH_NAME"
+            git checkout "$BRANCH_NAME"
+
+            gh pr view "$PR_ID" --repo elastic/kibana --json title,body,state,labels,headRefName,baseRefName > .ralph_pr_meta.json
+            gh api "repos/elastic/kibana/issues/$PR_ID/comments?per_page=50" > .ralph_issue_comments.json 2>/dev/null || echo "[]" > .ralph_issue_comments.json
+            gh api "repos/elastic/kibana/pulls/$PR_ID/comments?per_page=50" > .ralph_review_comments.json 2>/dev/null || echo "[]" > .ralph_review_comments.json
 
             git diff --name-only origin/main...HEAD > .ralph_diff_summary.txt 2>/dev/null || true
 
-            python3 - <<'PY'
-            import json
+            cat > .ralph_format_ctx.py << 'PYEOF'
+            import json, os
 
-            pr_id = "${{ inputs.pr_id }}"
+            pr_id = os.environ["PR_ID"]
 
             with open('.ralph_pr_meta.json') as f:
                 meta = json.load(f)
 
             lines = []
-            lines.append(f"# PR #{pr_id}: {meta.get('title', '')}")
-            lines.append(f"State: {meta.get('state', '')}")
-            lines.append(f"Base: {meta.get('baseRefName', '')} ← Head: {meta.get('headRefName', '')}")
+            lines.append("# PR #{}: {}".format(pr_id, meta.get('title', '')))
+            lines.append("State: {}".format(meta.get('state', '')))
+            lines.append("Base: {} ← Head: {}".format(meta.get('baseRefName', ''), meta.get('headRefName', '')))
             labels = [l['name'] for l in meta.get('labels', [])]
             if labels:
-                lines.append(f"Labels: {', '.join(labels)}")
+                lines.append("Labels: {}".format(', '.join(labels)))
             lines.append("")
             lines.append("## Description")
             lines.append(meta.get('body') or '(none)')
@@ -94,8 +97,8 @@ jobs:
                 diff_files = [l.strip() for l in f if l.strip()]
             if diff_files:
                 lines.append("## Files Changed in PR")
-                for f in diff_files:
-                    lines.append(f"- {f}")
+                for df in diff_files:
+                    lines.append("- {}".format(df))
                 lines.append("")
 
             with open('.ralph_issue_comments.json') as f:
@@ -107,9 +110,9 @@ jobs:
                 author = c.get('user', {}).get('login', 'unknown')
                 date = c.get('created_at', '')[:10]
                 body = c.get('body', '')
-                lines.append(f"- @{author} ({date}):")
+                lines.append("- @{} ({}):".format(author, date))
                 for bl in body.splitlines():
-                    lines.append(f"  {bl}")
+                    lines.append("  {}".format(bl))
             lines.append("")
 
             with open('.ralph_review_comments.json') as f:
@@ -122,17 +125,19 @@ jobs:
                 path = c.get('path', 'unknown')
                 line = c.get('line', c.get('original_line', '?'))
                 body = c.get('body', '')
-                lines.append(f"- @{author} [{path}:{line}]:")
+                lines.append("- @{} [{}:{}]:".format(author, path, line))
                 for bl in body.splitlines():
-                    lines.append(f"  {bl}")
+                    lines.append("  {}".format(bl))
             lines.append("")
 
             with open('.ralph_context.md', 'w') as f:
                 f.write('\n'.join(lines))
-            PY
+            PYEOF
 
-            rm -f .ralph_pr_meta.json .ralph_issue_comments.json .ralph_review_comments.json .ralph_diff_summary.txt
-            echo "Checked out PR #${{ inputs.pr_id }} — context written to .ralph_context.md"
+            python3 .ralph_format_ctx.py
+
+            rm -f .ralph_pr_meta.json .ralph_issue_comments.json .ralph_review_comments.json .ralph_diff_summary.txt .ralph_format_ctx.py
+            echo "Checked out PR #$PR_ID — context written to .ralph_context.md"
           else
             echo "New task mode — checked out elastic/kibana:main"
           fi
