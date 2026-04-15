@@ -73,6 +73,8 @@ jobs:
               exit 1
             fi
 
+            gh api "repos/${{ github.repository }}/contents/format_pr_context.py?ref=${{ github.event.repository.default_branch }}" --jq .content | base64 -d > format_pr_context.py
+
             gh pr view "$PR_ID" --repo elastic/kibana --json title,body,state,labels,headRefName,baseRefName > .ralph_pr_meta.json
             gh api "repos/elastic/kibana/issues/$PR_ID/comments?per_page=50" > .ralph_issue_comments.json 2>/dev/null || echo "[]" > .ralph_issue_comments.json
             gh api "repos/elastic/kibana/pulls/$PR_ID/comments?per_page=50" > .ralph_review_comments.json 2>/dev/null || echo "[]" > .ralph_review_comments.json
