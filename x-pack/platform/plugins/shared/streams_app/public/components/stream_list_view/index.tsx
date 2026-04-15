@@ -36,6 +36,11 @@ import { LegacyLogsDeprecationCallout } from './legacy_logs_deprecation_callout'
 import { CreateQueryStreamFlyout } from '../query_streams/create_query_stream_flyout';
 import { getFormattedError } from '../../util/errors';
 
+const getRandomEmoji = () => {
+  const emojis = ['🎉', '🚀', '⭐', '🌊', '🎯', '🔥', '✨', '🎨', '🌟', '💫'];
+  return emojis[Math.floor(Math.random() * emojis.length)];
+};
+
 export function StreamListView() {
   const { euiTheme } = useEuiTheme();
   const context = useKibana();
@@ -49,6 +54,7 @@ export function StreamListView() {
   } = context;
   const { onPageReady } = usePerformanceContext();
   const router = useStreamsAppRouter();
+  const [randomEmoji] = useState(getRandomEmoji());
 
   const { timeState } = useTimefilter();
   const streamsListFetch = useStreamsAppFetch(
@@ -162,6 +168,7 @@ export function StreamListView() {
           >
             <EuiFlexItem>
               <EuiFlexGroup alignItems="center" gutterSize="m">
+                {randomEmoji}{' '}
                 {i18n.translate('xpack.streams.streamsListView.pageHeaderTitle', {
                   defaultMessage: 'Streams',
                 })}
