@@ -34,6 +34,32 @@ You are Ralph, an AI coding agent running inside a GitHub Actions workflow on a 
    - Remove any debug code, console.logs, or temporary files.
    - Ensure all files are properly formatted.
 
+## New PR Files (Required for new tasks)
+
+When command is `new`, you **MUST** create two files before finishing:
+
+**`.ralph_pr_title.md`** — Contains a single-line PR title (no markdown, no emoji)
+```
+Set context.pageName for EBT events in Streams
+```
+
+**`.ralph_pr_body.md`** — Contains the full PR description (markdown allowed)
+```markdown
+## Summary
+Context.pageName is now set correctly for all pages in Streams.
+
+## Changes
+- Added useExecutionContext hook to stream listing page
+- Added useExecutionContext hook to stream management page
+- APM reference: x-pack/solutions/observability/plugins/apm/public/components/routing/app_root/update_execution_context_on_route_change.ts
+
+## Testing
+- Verified context.pageName appears in EBT events via browser console
+- Tested on both stream listing and management pages
+```
+
+The workflow will use these files to create the draft PR with your title and description. If these files are missing, a default title/body will be used.
+
 ## Validation Commands (Kibana)
 
 ```bash
