@@ -209,6 +209,10 @@ jobs:
           - All commits will be pushed by the workflow after you finish.
           - Focus on implementing the instruction above. Update files directly.
           - For adjust tasks, full PR context is in .ralph_context.md (description, comments, review comments, changed files).
+          - For new tasks, you MUST create two files before finishing:
+              .ralph_pr_title.md  — a concise PR title (one line, no markdown)
+              .ralph_pr_body.md   — a PR description with summary of changes, context, and testing notes
+            The workflow will use these to create the PR.
           - To type-check your changes, use the fast observability type checker:
             node x-pack/solutions/observability/packages/kbn-ts-type-check-oblt-cli/type_check.js --project path/to/tsconfig.json
           - If the fast type checker is unavailable, fall back to: yarn test:type_check --project path/to/tsconfig.json
@@ -248,6 +252,26 @@ jobs:
         run: |
           rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md format_pr_context.py
 
+          if [ "${{ inputs.command }}" == "new" ]; then
+            if [ -f .ralph_pr_title.md ]; then
+              PR_TITLE=$(cat .ralph_pr_title.md | head -1)
+              rm -f .ralph_pr_title.md
+            else
+              PR_TITLE="Ralph: ${{ inputs.instruction }}"
+            fi
+            if [ -f .ralph_pr_body.md ]; then
+              PR_BODY=$(cat .ralph_pr_body.md)
+              rm -f .ralph_pr_body.md
+            else
+              PR_BODY="Drafted by Ralph Engine.
+
+          Instruction: ${{ inputs.instruction }}
+
+          ---
+          *This PR was created automatically by the Ralph Engine GitHub Action.*"
+            fi
+          fi
+
           UNSTAGED=0
           if ! git diff --quiet 2>/dev/null; then UNSTAGED=1; fi
           if ! git diff --cached --quiet 2>/dev/null; then UNSTAGED=1; fi
@@ -283,13 +307,8 @@ jobs:
               --repo elastic/kibana \
               --head "${FORK_OWNER}:${CURRENT_BRANCH}" \
               --base main \
-              --title "Ralph: ${INSTRUCTION}" \
-              --body "Drafted by Ralph Engine.
-
-          Instruction: ${INSTRUCTION}
-
-          ---
-          *This PR was created automatically by the Ralph Engine GitHub Action.*" \
+              --title "${PR_TITLE}" \
+              --body "${PR_BODY}" \
               --draft
           else
             gh pr comment ${{ inputs.pr_id }} --body "Ralph applied changes for: ${INSTRUCTION}
