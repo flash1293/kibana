@@ -36,6 +36,16 @@ jobs:
     timeout-minutes: 90
 
     steps:
+      - name: Resolve PR branch
+        if: inputs.command == 'adjust'
+        id: resolve_pr_ref
+        env:
+          GH_TOKEN: ${{ secrets.MY_PAT }}
+        run: |
+          BRANCH=$(gh pr view ${{ inputs.pr_id }} --repo elastic/kibana --json headRefName -q .headRefName)
+          echo "ref=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "PR #${{ inputs.pr_id }} is on branch: $BRANCH"
+
       - name: Checkout upstream (new task)
         if: inputs.command == 'new'
         uses: actions/checkout@v4
@@ -48,6 +58,7 @@ jobs:
         if: inputs.command == 'adjust'
         uses: actions/checkout@v4
         with:
+          ref: ${{ steps.resolve_pr_ref.outputs.ref }}
           fetch-depth: 1
           token: ${{ secrets.MY_PAT }}
 
@@ -61,11 +72,6 @@ jobs:
               echo "ERROR: pr_id is required for adjust command"
               exit 1
             fi
-
-            BRANCH_NAME=$(gh pr view "$PR_ID" --repo elastic/kibana --json headRefName -q .headRefName)
-            echo "PR #$PR_ID is on branch: $BRANCH_NAME"
-            git fetch origin "$BRANCH_NAME"
-            git checkout "$BRANCH_NAME"
 
             gh pr view "$PR_ID" --repo elastic/kibana --json title,body,state,labels,headRefName,baseRefName > .ralph_pr_meta.json
             gh api "repos/elastic/kibana/issues/$PR_ID/comments?per_page=50" > .ralph_issue_comments.json 2>/dev/null || echo "[]" > .ralph_issue_comments.json
