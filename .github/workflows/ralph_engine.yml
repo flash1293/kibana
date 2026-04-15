@@ -254,7 +254,7 @@ jobs:
             exit 0
           fi
 
-          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md
+          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md format_pr_context.py
 
           git config user.name "Joe Reuter"
           git config user.email "johannes.reuter@elastic.co"
