@@ -101,6 +101,12 @@ jobs:
           echo "origin  → ${FORK_REPO} (push with PAT)"
           echo "upstream → elastic/kibana (read-only)"
 
+           # For new tasks on upstream checkout, create a feature branch
+           if [ "${{ inputs.command }}" == "new" ]; then
+             BRANCH_NAME="ralph-$(date +%s)"
+             git checkout -b "$BRANCH_NAME"
+           fi
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -287,17 +293,25 @@ jobs:
             git commit -m "$COMMIT_MSG"
           fi
 
-          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          UNPUSHED=$(git log origin/"$CURRENT_BRANCH"..HEAD --oneline 2>/dev/null || echo "unknown")
+           CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-          if [ "$UNPUSHED" = "" ] || [ "$UNPUSHED" = "unknown" ]; then
-            echo "No unpushed commits"
-            exit 0
-          fi
+           # For new tasks, we're on a feature branch and need to push it
+           if [ "${{ inputs.command }}" == "new" ]; then
+             # Push the feature branch (it doesn't exist on origin yet)
+             git push -u origin "$CURRENT_BRANCH"
+           else
+             # For adjust tasks, we're on the PR's existing branch
+             UNPUSHED=$(git log origin/"$CURRENT_BRANCH"..HEAD --oneline 2>/dev/null || echo "unknown")
 
-          echo "Unpushed commits:"
-          echo "$UNPUSHED"
-          git push origin "$CURRENT_BRANCH"
+             if [ "$UNPUSHED" = "" ] || [ "$UNPUSHED" = "unknown" ]; then
+               echo "No unpushed commits"
+               exit 0
+             fi
+
+             echo "Unpushed commits:"
+             echo "$UNPUSHED"
+             git push origin "$CURRENT_BRANCH"
+           fi
 
           INSTRUCTION="${{ inputs.instruction }}"
 
