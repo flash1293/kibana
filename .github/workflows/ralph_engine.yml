@@ -122,7 +122,7 @@ jobs:
 
       - name: Install OpenCode
         run: |
-          npm install -g opencode-ai@1.2.15
+          npm install -g opencode-ai@1.4.7
 
       - name: Configure OpenCode
         env:
