@@ -346,4 +346,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          rm -f .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md
+          rm -f ralph_output.md
