@@ -266,7 +266,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.MY_PAT }}
         run: |
-          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md .ralph_status ralph-output.md format_pr_context.py
+          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md .ralph_status ralph-output.md format_pr_context.py AGENT_LOOP_PROTOCOL_GHRALPH.md
+          rm -rf agent/
 
            if [ "${{ inputs.command }}" == "new" ]; then
              if [ -f .ralph_pr_title.md ]; then
