@@ -1,98 +1,59 @@
-# Agent Loop Protocol (CI Edition)
+# Agent Loop Protocol - Reference
 
-You are Ralph, an AI coding agent running inside a GitHub Actions workflow on a fork of elastic/kibana.
+This document describes the agent loop concepts for both local and GitHub Actions contexts.
 
-## Environment
+**For context-specific guidance:**
+- **Local execution (ralph.sh):** See `AGENT_LOOP_PROTOCOL_LOCAL.md`
+- **GitHub Actions (gh-ralph):** See `AGENT_LOOP_PROTOCOL_GHRALPH.md`
 
-- You are running on `ubuntu-latest` with Node.js, yarn, and the Kibana repo checked out.
-- The repo has been bootstrapped (`yarn kbn bootstrap`) before you started.
-- You have access to `gh` CLI (authenticated via `GH_TOKEN`) for GitHub operations.
-- You have access to `git` for local version control.
-- Changes you make will be committed and pushed by the workflow after you finish.
+---
 
-## Constraints
+## Overview
 
-- **No interactive operations**: You are in a non-interactive CI environment. Do not attempt `git push`, `git pull`, or any operation that requires user input.
-- **No branching**: The workflow handles branch creation. Just edit files in the current working tree.
-- **Draft PRs only**: If this is a `new` task, the workflow will create a draft PR to `elastic/kibana:main`.
-- **Commit authorship**: The workflow commits as `Ralph-Agent <ralph@bot.local>`. Do not attempt to change git config.
+You are executing work in an iterative loop. The specific mechanisms depend on your execution context:
 
-## Required Behavior
+## Important paths and metadata
+- **Spec file path**: Provided below - you MUST update this file after completing each task
+- **Reference files**: Located in the "Reference files directory" provided below - use absolute paths when reading these
+- **GitHub username**: Provided below - use this when creating PRs or leaving comments (e.g., "wait for @username to chime in")
 
-1. **Read the instruction** carefully. Understand what needs to be done.
-2. **Explore the codebase** to find the relevant files and understand the existing patterns.
-3. **Implement the changes** following Kibana's existing code conventions:
-   - Mimic the style of neighboring files.
-   - Use existing utilities and libraries already in the codebase.
-   - Follow the import patterns of nearby files.
-4. **Validate your changes**:
-   - Run the fast observability type checker: `node x-pack/solutions/observability/packages/kbn-ts-type-check-oblt-cli/type_check.js --project path/to/tsconfig.json`
-   - If that fails, fall back to: `yarn test:type_check --project path/to/tsconfig.json`
-   - If there are focused tests for the area you changed, run them.
-   - Fix any issues found by validation.
-5. **Leave the codebase clean**:
-   - Remove any debug code, console.logs, or temporary files.
-   - Ensure all files are properly formatted.
+## Required behavior
+- Pick the **first unchecked** task in `## Tasks`.
+- Implement **exactly one task** (including its acceptance checks).
+- **PR-only workflow policy:** use `gh` for PR operations (create/view/edit/comment) and work through PR branches only. **NEVER push to upstream (`elastic/kibana`) — always push to the user's fork.** Use `git push <fork-remote> HEAD:<branch>` (e.g., `git push origin HEAD:ralph/issue-123`). When updating an existing PR, check where the PR head lives with `gh pr view <N> --repo elastic/kibana --json headRepository,headRefName` and push to that fork remote. Creating a new PR from your fork branch to `elastic/kibana:main` is allowed and encouraged for new work.
+- **Commit authorship (CRITICAL):** All commits **MUST** be authored by the GitHub username provided below — never by `cursor` or any other identity. Before every `git push`, run `git log -1 --format='%an <%ae>'` and verify the author matches the GitHub user. If it doesn't, amend with `git commit --amend --author="Name <email>"` before pushing. See `spec/pr_creation.md` and `spec/github_fetching.md` for details.
+- Update the spec file (at the path provided below):
+  - Mark the task complete (`[x]`).
+  - Append discoveries/gotchas to `## Additional Context`.
+  - Adjust remaining tasks if reality differs (split/merge/reword as needed).
+  - Update `## Status`:
+    - `in-progress` when the first implementation task begins
+    - `done` only when the spec's "Definition of done" is met (and all tasks needed to satisfy it are complete)
+- Exit after updating the spec so the next fresh session can continue.
+- **Lessons learned:** If you have generic lessons learned (e.g. updates to shared guidance in `spec/` or discoveries worth recording), create an issue in the coordination repo titled **"generic lessons learned"**, add the **wontfix** label, and put your notes in the body. This works without push/PR permissions and keeps the issue from being picked up by workers.
 
-## New PR Files (Required for new tasks)
+## Automatic retry behavior (GitHub Actions workflow)
 
-When command is `new`, you **MUST** create two files before finishing:
+When running in the GitHub Actions workflow (`gh-ralph`), the agent loop is **wrapped in an automatic retry mechanism**:
 
-**`.ralph_pr_title.md`** — Contains a single-line PR title (no markdown, no emoji)
-```
-Set context.pageName for EBT events in Streams
-```
+- **Max 10 attempts**: The workflow will run `opencode` up to 10 times automatically.
+- **Status detection**: After each run, the workflow checks for task completion:
+  - If `.ralph_status` file exists with `done` → Task succeeded, workflow exits successfully ✅
+  - If `.ralph_status` file exists with `aborted` → Task was explicitly abandoned, workflow exits with error ❌
+  - Otherwise → Continue to next attempt (up to 10 total)
+- **⚠️ CRITICAL - How to signal completion in gh-ralph**: 
+  - When your work is complete, **create a file named `.ralph_status`** with the single word: `done`
+  - Example: `echo "done" > .ralph_status`
+  - This signals to the workflow that the task is complete and it should exit the retry loop
+  - Without this file, the workflow will keep retrying until max attempts (10) are exhausted
+- **Failure context**: Between attempts, the workflow appends feedback from the previous attempt to `.ralph_task.md`. This gives you visibility into what failed so you can adjust your approach.
 
-**`.ralph_pr_body.md`** — Contains the full PR description (markdown allowed)
-```markdown
-## Summary
-Context.pageName is now set correctly for all pages in Streams.
+### Why this matters
 
-## Changes
-- Added useExecutionContext hook to stream listing page
-- Added useExecutionContext hook to stream management page
-- APM reference: x-pack/solutions/observability/plugins/apm/public/components/routing/app_root/update_execution_context_on_route_change.ts
+If you encounter an invalid tool call, network error, or other transient failure, you don't need to stop. The workflow will:
+1. Capture the error context
+2. Feed it back to you
+3. Let you retry with the error information
 
-## Testing
-- Verified context.pageName appears in EBT events via browser console
-- Tested on both stream listing and management pages
-```
+This makes the automated workflow much more resilient than a single run.
 
-The workflow will use these files to create the draft PR with your title and description. If these files are missing, a default title/body will be used.
-
-## Validation Commands (Kibana)
-
-```bash
-# Fast type check (observability CLI — auto-restores cached artifacts from GCS)
-node x-pack/solutions/observability/packages/kbn-ts-type-check-oblt-cli/type_check.js \
-  --project path/to/tsconfig.json
-
-# Fallback type check
-yarn test:type_check --project path/to/tsconfig.json
-
-# Run focused tests (adjust paths to your changes)
-npx jest <path-to-test> --no-coverage
-```
-
-## For Adjust Mode (PR modifications)
-
-When adjusting an existing PR:
-- The PR branch is already checked out.
-- PR context (comments, title, body) is available in `.ralph_context.json`.
-- Focus on the specific instruction given for this adjustment.
-- Do not rewrite unrelated code.
-- The workflow will push directly to the PR branch and comment on the PR.
-
-## Error Handling
-
-- If validation fails, attempt to fix the errors yourself.
-- If you cannot fix them, leave a clear comment in the code about what failed.
-- The workflow has a self-fix step that will give you one more attempt if the initial run fails.
-
-## Output
-
-Just modify files in the working tree. The workflow will:
-1. Detect your changes
-2. Commit them with a message based on the instruction
-3. Push them to the appropriate branch
-4. Create or update the PR
