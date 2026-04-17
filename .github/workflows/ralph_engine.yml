@@ -216,7 +216,7 @@ jobs:
           set -o pipefail
           MAX_ATTEMPTS=10
           TASK_FILE=".ralph_task.md"
-          OUTPUT_LOG="ralph-output.md"
+          OUTPUT_LOG="ralph_output.md"
           ATTEMPT=0
            get_task_status() {
              if [ -f ".ralph_status" ]; then
@@ -266,7 +266,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.MY_PAT }}
         run: |
-          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md .ralph_status ralph-output.md format_pr_context.py AGENT_LOOP_PROTOCOL_GHRALPH.md
+          rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md .ralph_status ralph_output.md format_pr_context.py AGENT_LOOP_PROTOCOL_GHRALPH.md
           rm -rf agent/
 
            if [ "${{ inputs.command }}" == "new" ]; then
