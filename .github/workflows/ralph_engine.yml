@@ -258,27 +258,28 @@ jobs:
         run: |
           rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md ralph-output.md format_pr_context.py
 
-          if [ "${{ inputs.command }}" == "new" ]; then
-            if [ -f .ralph_pr_title.md ]; then
-              PR_TITLE=$(cat .ralph_pr_title.md | head -1)
-              rm -f .ralph_pr_title.md
-            else
-              PR_TITLE="Ralph: ${{ inputs.instruction }}"
-            fi
-            if [ -f .ralph_pr_body.md ]; then
-              PR_BODY=$(cat .ralph_pr_body.md)
-              rm -f .ralph_pr_body.md
-            else
-              PR_BODY="Drafted by Ralph Engine.
+           if [ "${{ inputs.command }}" == "new" ]; then
+             if [ -f .ralph_pr_title.md ]; then
+               PR_TITLE=$(cat .ralph_pr_title.md | head -1)
+             else
+               PR_TITLE="Ralph: ${{ inputs.instruction }}"
+             fi
+             if [ -f .ralph_pr_body.md ]; then
+               PR_BODY=$(cat .ralph_pr_body.md)
+             else
+               PR_BODY="Drafted by Ralph Engine.
 
-          Instruction: ${{ inputs.instruction }}
+           Instruction: ${{ inputs.instruction }}
 
-          ---
-          *This PR was created automatically by the Ralph Engine GitHub Action.*"
-            fi
-          fi
+           ---
+           *This PR was created automatically by the Ralph Engine GitHub Action.*"
+             fi
+           fi
 
-          UNSTAGED=0
+           # Delete PR metadata files BEFORE committing them
+           rm -f .ralph_pr_title.md .ralph_pr_body.md
+
+           UNSTAGED=0
           if ! git diff --quiet 2>/dev/null; then UNSTAGED=1; fi
           if ! git diff --cached --quiet 2>/dev/null; then UNSTAGED=1; fi
           if [ -n "$(git ls-files --others --exclude-standard)" ]; then UNSTAGED=1; fi
