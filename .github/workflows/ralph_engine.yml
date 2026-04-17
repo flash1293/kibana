@@ -194,9 +194,9 @@ jobs:
 
           ## Instruction
 
-          TASK_MID
+           TASK_MID
 
-          echo "${{ inputs.instruction }}" >> .ralph_task.md
+           echo "${{ inputs.instruction }}" >> .ralph_task.md
 
            if [ -n "$CONTEXT" ]; then
              cat >> .ralph_task.md <<'TASK_CTX'
