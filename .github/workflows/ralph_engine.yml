@@ -167,9 +167,11 @@ jobs:
       - name: Build Task Prompt
         run: |
           PROTOCOL=""
-          if [ -f "AGENT_LOOP_PROTOCOL.md" ]; then
-            PROTOCOL=$(cat AGENT_LOOP_PROTOCOL.md)
-          fi
+           if [ -f "AGENT_LOOP_PROTOCOL_GHRALPH.md" ]; then
+             PROTOCOL=$(cat AGENT_LOOP_PROTOCOL_GHRALPH.md)
+           elif [ -f "AGENT_LOOP_PROTOCOL.md" ]; then
+             PROTOCOL=$(cat AGENT_LOOP_PROTOCOL.md)
+           fi
 
           CONTEXT=""
           if [ "${{ inputs.command }}" == "adjust" ] && [ -f .ralph_context.md ]; then
@@ -196,34 +198,14 @@ jobs:
 
           echo "${{ inputs.instruction }}" >> .ralph_task.md
 
-          if [ -n "$CONTEXT" ]; then
-            cat >> .ralph_task.md <<'TASK_CTX'
+           if [ -n "$CONTEXT" ]; then
+             cat >> .ralph_task.md <<'TASK_CTX'
 
-          ## PR Context
+           ## PR Context
 
-          TASK_CTX
-            echo "$CONTEXT" >> .ralph_task.md
-          fi
-
-          cat >> .ralph_task.md <<'TASK_FOOTER'
-
-          ---
-
-          ## Important Reminders
-
-          - You are running in CI. Do NOT attempt interactive git operations.
-          - All commits will be pushed by the workflow after you finish.
-          - Focus on implementing the instruction above. Update files directly.
-          - For adjust tasks, full PR context is in .ralph_context.md (description, comments, review comments, changed files).
-          - For new tasks, you MUST create two files before finishing:
-              .ralph_pr_title.md  — a concise PR title (one line, no markdown)
-              .ralph_pr_body.md   — a PR description with summary of changes, context, and testing notes
-            The workflow will use these to create the PR.
-          - To type-check your changes, use the fast observability type checker:
-            node x-pack/solutions/observability/packages/kbn-ts-type-check-oblt-cli/type_check.js --project path/to/tsconfig.json
-          - If the fast type checker is unavailable, fall back to: yarn test:type_check --project path/to/tsconfig.json
-          - If validation fails, fix the issues and try again.
-          TASK_FOOTER
+           TASK_CTX
+             echo "$CONTEXT" >> .ralph_task.md
+           fi
 
            echo "Task prompt written to .ralph_task.md"
 
