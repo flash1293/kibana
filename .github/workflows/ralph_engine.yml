@@ -167,11 +167,9 @@ jobs:
       - name: Build Task Prompt
         run: |
           PROTOCOL=""
-           if [ -f "AGENT_LOOP_PROTOCOL_GHRALPH.md" ]; then
-             PROTOCOL=$(cat AGENT_LOOP_PROTOCOL_GHRALPH.md)
-           elif [ -f "AGENT_LOOP_PROTOCOL.md" ]; then
-             PROTOCOL=$(cat AGENT_LOOP_PROTOCOL.md)
-           fi
+          if [ -f "AGENT_LOOP_PROTOCOL_GHRALPH.md" ]; then
+            PROTOCOL=$(cat AGENT_LOOP_PROTOCOL_GHRALPH.md)
+          fi
 
           CONTEXT=""
           if [ "${{ inputs.command }}" == "adjust" ] && [ -f .ralph_context.md ]; then
