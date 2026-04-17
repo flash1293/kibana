@@ -225,32 +225,15 @@ jobs:
           - If validation fails, fix the issues and try again.
           TASK_FOOTER
 
-          echo "Task prompt written to .ralph_task.md"
+           echo "Task prompt written to .ralph_task.md"
 
-      - name: Run Agent
+      - name: Run Agent (with automatic retries)
         env:
           LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
           GH_TOKEN: ${{ secrets.MY_PAT }}
           MODEL: ${{ steps.resolve_model.outputs.model }}
         run: |
-          opencode run "$(cat .ralph_task.md)" --model "$MODEL" 2>&1 | tee ralph-output.md
-
-      - name: Self-Fix on Failure
-        if: failure()
-        env:
-          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
-          MODEL: ${{ steps.resolve_model.outputs.model }}
-        run: |
-          echo "Agent step failed. Attempting one self-fix..."
-          ERROR_CONTEXT=$(tail -200 ralph-output.md 2>/dev/null || echo "No output captured")
-          cat > .ralph_fix_task.md <<FIX_EOF
-          The previous agent run failed. Here is the error output from the last 200 lines:
-
-          ${ERROR_CONTEXT}
-
-          Fix the issue that caused the failure. Focus on the actual error, not on re-implementing the original task.
-          FIX_EOF
-          opencode run "$(cat .ralph_fix_task.md)" --model "$MODEL" 2>&1 | tee -a ralph-output.md
+          bash gh-ralph/run_agent_with_retries.sh
 
       - name: Push Changes
         env:
