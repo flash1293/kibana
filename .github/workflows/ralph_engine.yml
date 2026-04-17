@@ -194,20 +194,20 @@ jobs:
 
           ## Instruction
 
-           TASK_MID
+TASK_MID
 
-           echo "${{ inputs.instruction }}" >> .ralph_task.md
+          echo "${{ inputs.instruction }}" >> .ralph_task.md
 
-           if [ -n "$CONTEXT" ]; then
-             cat >> .ralph_task.md <<'TASK_CTX'
+          if [ -n "$CONTEXT" ]; then
+            cat >> .ralph_task.md <<'TASK_CTX'
 
-           ## PR Context
+          ## PR Context
 
-           TASK_CTX
-             echo "$CONTEXT" >> .ralph_task.md
-           fi
+TASK_CTX
+            echo "$CONTEXT" >> .ralph_task.md
+          fi
 
-           echo "Task prompt written to .ralph_task.md"
+          echo "Task prompt written to .ralph_task.md"
 
       - name: Run Agent (with automatic retries)
         env:
