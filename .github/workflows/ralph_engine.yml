@@ -233,7 +233,50 @@ jobs:
           GH_TOKEN: ${{ secrets.MY_PAT }}
           MODEL: ${{ steps.resolve_model.outputs.model }}
         run: |
-          bash gh-ralph/run_agent_with_retries.sh
+          set -o pipefail
+          MAX_ATTEMPTS=10
+          TASK_FILE=".ralph_task.md"
+          OUTPUT_LOG="ralph-output.md"
+          ATTEMPT=0
+          get_task_status() {
+            awk 'BEGIN { in_status = 0 } /^##[[:space:]]+Status[[:space:]]*$/ { in_status = 1; next } in_status { if ($0 ~ /^[[:space:]]*$/) next; gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0); print tolower($0); exit }' "$TASK_FILE" 2>/dev/null || echo "unknown"
+          }
+          > "$OUTPUT_LOG"
+          while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Agent attempt $ATTEMPT / $MAX_ATTEMPTS"
+            if ! opencode run "$(cat "$TASK_FILE")" --model "$MODEL" 2>&1 | tee -a "$OUTPUT_LOG"; then
+              echo "[Attempt $ATTEMPT failed]"
+            fi
+            STATUS=$(get_task_status)
+            echo "[Task status: $STATUS]"
+            if [[ "$STATUS" == "done" ]]; then
+              echo "SUCCESS on attempt $ATTEMPT"
+              exit 0
+            elif [[ "$STATUS" == "aborted" ]]; then
+              echo "Task aborted"
+              exit 1
+            fi
+            if [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; then
+              FAILURE_CONTEXT=$(tail -100 "$OUTPUT_LOG" 2>/dev/null || echo "No output")
+              cat >> "$TASK_FILE" <<APPEND_EOF
+          
+          ---
+          
+          ## Attempt $ATTEMPT Feedback
+          
+          Last output from attempt $ATTEMPT:
+          
+          \`\`\`
+          ${FAILURE_CONTEXT}
+          \`\`\`
+          
+          APPEND_EOF
+              echo "[Retry with feedback]"
+            fi
+          done
+          echo "Max attempts reached"
+          exit 1
 
       - name: Push Changes
         env:
