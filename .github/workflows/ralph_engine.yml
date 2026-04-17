@@ -176,32 +176,32 @@ jobs:
             CONTEXT=$(cat .ralph_context.md)
           fi
 
-          cat > .ralph_task.md <<'TASK_HEADER'
-          You are Ralph, an AI coding agent running in a GitHub Actions workflow.
-
-          TASK_HEADER
+          cat > .ralph_task.md <<-'TASK_HEADER'
+          	You are Ralph, an AI coding agent running in a GitHub Actions workflow.
+          	
+          	TASK_HEADER
 
           if [ -n "$PROTOCOL" ]; then
             echo "" >> .ralph_task.md
             echo "$PROTOCOL" >> .ralph_task.md
           fi
 
-          cat >> .ralph_task.md <<'TASK_MID'
-
-          ---
-
-          ## Instruction
-
-TASK_MID
+          cat >> .ralph_task.md <<-'TASK_MID'
+          	
+          	---
+          	
+          	## Instruction
+          	
+          	TASK_MID
 
           echo "${{ inputs.instruction }}" >> .ralph_task.md
 
           if [ -n "$CONTEXT" ]; then
-            cat >> .ralph_task.md <<'TASK_CTX'
-
-          ## PR Context
-
-TASK_CTX
+            cat >> .ralph_task.md <<-'TASK_CTX'
+          	
+          	## PR Context
+          	
+          	TASK_CTX
             echo "$CONTEXT" >> .ralph_task.md
           fi
 
