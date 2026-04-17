@@ -67,6 +67,16 @@ jobs:
           GH_TOKEN: ${{ secrets.MY_PAT }}
           PR_ID: ${{ inputs.pr_id }}
         run: |
+          # Fetch protocol file from fork's default branch (needed for both new and adjust tasks)
+          echo "Fetching agent protocol from fork..."
+          if ! gh api "repos/${{ github.repository }}/contents/AGENT_LOOP_PROTOCOL_GHRALPH.md?ref=${{ github.event.repository.default_branch }}" --jq .content | base64 -d > AGENT_LOOP_PROTOCOL_GHRALPH.md; then
+            echo "ERROR: Failed to fetch AGENT_LOOP_PROTOCOL_GHRALPH.md from fork"
+            echo "This file is required for the agent to function properly."
+            echo "Run './gh-ralph.sh install' to ensure all required files are present in your fork."
+            exit 1
+          fi
+          echo "Protocol file fetched successfully"
+
           if [ "${{ inputs.command }}" == "adjust" ]; then
             if [ -z "${{ inputs.pr_id }}" ]; then
               echo "ERROR: pr_id is required for adjust command"
@@ -166,10 +176,14 @@ jobs:
 
       - name: Build Task Prompt
         run: |
-          PROTOCOL=""
-          if [ -f "AGENT_LOOP_PROTOCOL_GHRALPH.md" ]; then
-            PROTOCOL=$(cat AGENT_LOOP_PROTOCOL_GHRALPH.md)
+          # Verify protocol file exists (should have been fetched in Ralph Context Assembly)
+          if [ ! -f "AGENT_LOOP_PROTOCOL_GHRALPH.md" ]; then
+            echo "ERROR: AGENT_LOOP_PROTOCOL_GHRALPH.md not found!"
+            echo "The Ralph Context Assembly step should have fetched this file."
+            echo "This is a critical error - the agent cannot function without protocol instructions."
+            exit 1
           fi
+          PROTOCOL=$(cat AGENT_LOOP_PROTOCOL_GHRALPH.md)
 
           CONTEXT=""
           if [ "${{ inputs.command }}" == "adjust" ] && [ -f .ralph_context.md ]; then
@@ -181,10 +195,8 @@ jobs:
           	
           	TASK_HEADER
 
-          if [ -n "$PROTOCOL" ]; then
-            echo "" >> .ralph_task.md
-            echo "$PROTOCOL" >> .ralph_task.md
-          fi
+          echo "" >> .ralph_task.md
+          echo "$PROTOCOL" >> .ralph_task.md
 
           cat >> .ralph_task.md <<-'TASK_MID'
           	
@@ -267,7 +279,6 @@ jobs:
           GH_TOKEN: ${{ secrets.MY_PAT }}
         run: |
           rm -f opencode.json .ralph_task.md .ralph_fix_task.md .ralph_context.md .ralph_status ralph_output.md format_pr_context.py AGENT_LOOP_PROTOCOL_GHRALPH.md
-          rm -rf agent/
 
            if [ "${{ inputs.command }}" == "new" ]; then
              if [ -f .ralph_pr_title.md ]; then
