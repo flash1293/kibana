@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { i18n } from '@kbn/i18n';
 import type { Direction, EuiSearchBarProps, CriteriaWithPagination, Query } from '@elastic/eui';
 import {
@@ -25,6 +25,7 @@ import type { QualityIndicators } from '@kbn/dataset-quality-plugin/common';
 import { Streams, LOGS_ROOT_STREAM_NAME } from '@kbn/streams-schema';
 import useAsync from 'react-use/lib/useAsync';
 import type { WiredStreamsStatus } from '@kbn/streams-plugin/public';
+import { isElkyQuery } from './elky_detection';
 import { useStreamsTour } from '../streams_tour';
 import type { TableRow, SortableField } from './utils';
 import {
@@ -72,12 +73,14 @@ export function StreamsTreeTable({
   canReadFailureStore = false,
   wiredStreamsStatus,
   openFlyout,
+  onElkyQueryChange,
 }: {
   streams?: ListStreamDetail[];
   canReadFailureStore?: boolean;
   loading?: boolean;
   wiredStreamsStatus?: WiredStreamsStatus;
   openFlyout?: () => void;
+  onElkyQueryChange?: (isElkyQuery: boolean) => void;
 }) {
   const router = useStreamsAppRouter();
   const { rangeFrom, rangeTo } = useTimeRange();
@@ -94,6 +97,11 @@ export function StreamsTreeTable({
     pageIndex: 0,
     pageSize: 25,
   });
+
+  // Detect "Where is Elky" query and notify parent
+  useEffect(() => {
+    onElkyQueryChange?.(isElkyQuery(searchQuery));
+  }, [searchQuery, onElkyQueryChange]);
 
   const numDataPoints = 25;
 
